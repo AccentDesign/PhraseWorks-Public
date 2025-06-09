@@ -1,0 +1,1 @@
+import{r as t,U as a,u as n,j as e}from"./index--0-l5yLH.js";const x=({children:s})=>{const{VerifyUserLogin:r}=t.useContext(a),o=n();return t.useEffect(()=>{r(o)},[]),e.jsx(e.Fragment,{children:s})};export{x as V};

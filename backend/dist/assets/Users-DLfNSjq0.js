@@ -1,0 +1,1 @@
+import{j as s}from"./index-D3eQ7WtV.js";import{V as e,H as r,P as t,F as n}from"./PageContent-BDj_v4Ns.js";import"./index-C-Xsb71F.js";const o=()=>s.jsx("div",{children:"UsersPageContent"}),j=()=>(document.title="Users",s.jsxs(e,{children:[s.jsx(r,{}),s.jsx(t,{children:s.jsx(o,{})}),s.jsx(n,{})]}));export{j as default};

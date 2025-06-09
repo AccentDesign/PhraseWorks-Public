@@ -1,0 +1,71 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "backend",
+  "main": "src/index.js",
+  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2025-02-24",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+  },
+  "r2_buckets": [
+    {
+      "bucket_name": "phrase-works",
+      "binding": "phrase_works",
+    },
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "hyperdrive-postgres-id",
+      "localConnectionString": "postgresql://user:password@localhost:5432/db",
+    },
+  ],
+  "vars": {
+    "SECRET_KEY": "somesupersecretsecret",
+    "AUTH_SECRET": "asecretvalue",
+    "R2_PUBLIC_URL": "thepublicr2url",
+    "SITE_URL": "http://localhost",
+    "SITE_NAME": "localhost",
+    "PHRASE_WORKS_VERSION": "0.0.1",
+
+    "SMTP_USERNAME": "username",
+    "SMTP_PASSWORD": "password",
+    "SMTP_AUTHTYPE": "login",
+    "SMTP_HOST": "smtp.url.com",
+    "SMTP_PORT": 587,
+    "SMTP_SECURE": false,
+  },
+  // "compatibility_flags": [
+  //   "nodejs_compat"
+  // ],
+  // "vars": {
+  //   "MY_VAR": "my-variable"
+  // },
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  //   }
+  // ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "my-bucket"
+  //   }
+  // ],
+  // "d1_databases": [
+  //   {
+  //     "binding": "MY_DB",
+  //     "database_name": "my-database",
+  //     "database_id": ""
+  //   }
+  // ],
+  // "ai": {
+  //   "binding": "AI"
+  // },
+  // "observability": {
+  //   "enabled": true,
+  //   "head_sampling_rate": 1
+  // }
+}

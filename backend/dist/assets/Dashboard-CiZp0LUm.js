@@ -1,0 +1,1 @@
+import{j as s,V as e,H as a,P as r,b as t}from"./index-FfbuwZur.js";const n=()=>s.jsx("div",{children:"DashboardPageContent"}),d=()=>s.jsxs(e,{children:[s.jsx(a,{}),s.jsx(r,{children:s.jsx(n,{})}),s.jsx(t,{})]});export{d as default};
