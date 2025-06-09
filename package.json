@@ -4,7 +4,8 @@
   "description": "# Phrase Works",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
+    "install-all": "concurrently \"cd frontend && npm install\" \"cd backend && npm install\""
   },
   "keywords": [],
   "author": "",
