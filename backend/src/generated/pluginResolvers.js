@@ -1,40 +1,15 @@
-import plugin1 from '../plugins/accordionsPlugin/index.js';
-import plugin2 from '../plugins/adminColumns/index.js';
-import plugin3 from '../plugins/cookieConsent/index.js';
-import plugin4 from '../plugins/googleFontsPlugin/index.js';
-import plugin5 from '../plugins/pwSMTP/index.js';
-import plugin6 from '../plugins/s3UploadsPlugin/index.js';
-import plugin7 from '../plugins/testPlugin/index.js';
-import plugin8 from '../plugins/zeroGPlugin/index.js';
+import plugin1 from '../plugins/testPlugin/index.js';
 
-const pluginResolvers = [
-  plugin1.resolvers,
-  plugin2.resolvers,
-  plugin3.resolvers,
-  plugin4.resolvers,
-  plugin5.resolvers,
-  plugin6.resolvers,
-  plugin7.resolvers,
-  plugin8.resolvers,
-].filter(Boolean);
+const pluginResolvers = [plugin1.resolvers].filter(Boolean);
 
-const pluginTypeDefs = [
-  plugin1.typeDefs,
-  plugin2.typeDefs,
-  plugin3.typeDefs,
-  plugin4.typeDefs,
-  plugin5.typeDefs,
-  plugin6.typeDefs,
-  plugin7.typeDefs,
-  plugin8.typeDefs,
-].filter(Boolean);
+const pluginTypeDefs = [plugin1.typeDefs].filter(Boolean);
 
 const pluginMeta = [
   {
     version: plugin1.version,
     name: plugin1.name,
-    slug: 'accordionsPlugin',
-    pageUrls: ["/admin/accordions-plugin","/admin/accordions-plugin/add","/admin/accordions-plugin/edit/:id"],
+    slug: 'testPlugin',
+    pageUrls: ['/admin/test-plugin'],
     description: plugin1.description || '',
     author: plugin1.author || '',
     authorUrl: plugin1.authorUrl || '',
@@ -43,104 +18,6 @@ const pluginMeta = [
     adminPageComponents: plugin1.adminPageComponents || {},
     shortcodes: plugin1.shortCodes || {},
     src: plugin1.src || {},
-  },
-  {
-    version: plugin2.version,
-    name: plugin2.name,
-    slug: 'adminColumns',
-    pageUrls: ["/admin/admin-columns","/admin/admin-columns/add","/admin/admin-columns/edit/:id"],
-    description: plugin2.description || '',
-    author: plugin2.author || '',
-    authorUrl: plugin2.authorUrl || '',
-    init: plugin2.init,
-    disable: plugin2.disable,
-    adminPageComponents: plugin2.adminPageComponents || {},
-    shortcodes: plugin2.shortCodes || {},
-    src: plugin2.src || {},
-  },
-  {
-    version: plugin3.version,
-    name: plugin3.name,
-    slug: 'cookieConsent',
-    pageUrls: ["/admin/cookie-consent"],
-    description: plugin3.description || '',
-    author: plugin3.author || '',
-    authorUrl: plugin3.authorUrl || '',
-    init: plugin3.init,
-    disable: plugin3.disable,
-    adminPageComponents: plugin3.adminPageComponents || {},
-    shortcodes: plugin3.shortCodes || {},
-    src: plugin3.src || {},
-  },
-  {
-    version: plugin4.version,
-    name: plugin4.name,
-    slug: 'googleFontsPlugin',
-    pageUrls: ["/admin/google-fonts"],
-    description: plugin4.description || '',
-    author: plugin4.author || '',
-    authorUrl: plugin4.authorUrl || '',
-    init: plugin4.init,
-    disable: plugin4.disable,
-    adminPageComponents: plugin4.adminPageComponents || {},
-    shortcodes: plugin4.shortCodes || {},
-    src: plugin4.src || {},
-  },
-  {
-    version: plugin5.version,
-    name: plugin5.name,
-    slug: 'pwSMTP',
-    pageUrls: ["/admin/pw-smtp"],
-    description: plugin5.description || '',
-    author: plugin5.author || '',
-    authorUrl: plugin5.authorUrl || '',
-    init: plugin5.init,
-    disable: plugin5.disable,
-    adminPageComponents: plugin5.adminPageComponents || {},
-    shortcodes: plugin5.shortCodes || {},
-    src: plugin5.src || {},
-  },
-  {
-    version: plugin6.version,
-    name: plugin6.name,
-    slug: 's3UploadsPlugin',
-    pageUrls: [],
-    description: plugin6.description || '',
-    author: plugin6.author || '',
-    authorUrl: plugin6.authorUrl || '',
-    init: plugin6.init,
-    disable: plugin6.disable,
-    adminPageComponents: plugin6.adminPageComponents || {},
-    shortcodes: plugin6.shortCodes || {},
-    src: plugin6.src || {},
-  },
-  {
-    version: plugin7.version,
-    name: plugin7.name,
-    slug: 'testPlugin',
-    pageUrls: ["/admin/test-plugin"],
-    description: plugin7.description || '',
-    author: plugin7.author || '',
-    authorUrl: plugin7.authorUrl || '',
-    init: plugin7.init,
-    disable: plugin7.disable,
-    adminPageComponents: plugin7.adminPageComponents || {},
-    shortcodes: plugin7.shortCodes || {},
-    src: plugin7.src || {},
-  },
-  {
-    version: plugin8.version,
-    name: plugin8.name,
-    slug: 'zeroGPlugin',
-    pageUrls: ["/admin/zero-g","/admin/zero-g/add","/admin/zero-g/edit/:id","/admin/zero-g/form_settings/:id","/admin/zero-g/form_settings/confirmations/:id","/admin/zero-g/form_settings/confirmations/new/:id","/admin/zero-g/form_settings/confirmations/edit/:id/:confirmationId","/admin/zero-g/form_settings/notifications/:id","/admin/zero-g/form_settings/notifications/new/:id","/admin/zero-g/form_settings/notifications/edit/:id/:notificationId","/admin/zero-g/form_entries/:id","/admin/zero-g/form_entry/:formId/:id","/admin/zero-g/settings"],
-    description: plugin8.description || '',
-    author: plugin8.author || '',
-    authorUrl: plugin8.authorUrl || '',
-    init: plugin8.init,
-    disable: plugin8.disable,
-    adminPageComponents: plugin8.adminPageComponents || {},
-    shortcodes: plugin8.shortCodes || {},
-    src: plugin8.src || {},
   },
 ].filter(Boolean);
 

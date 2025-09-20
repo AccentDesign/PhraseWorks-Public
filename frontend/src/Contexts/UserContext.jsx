@@ -112,7 +112,7 @@ export function UserContextProvider({ children }) {
             graphqlUrl,
           );
 
-          if (data.status === 200) {
+          if (data.status === 200 && data.data?.refresh) {
             const refreshExpiry = new Date(data.data.refresh.refreshTokenExpiry * 1000);
             setLoginPassword(data.data.refresh.token);
             localStorage.setItem('loginPassword', data.data.refresh.token);
