@@ -6,6 +6,7 @@ import {
   APIGetCategories,
   APISaveDraftNewPage,
   APISavePublishNewPage,
+  APIUpdatePostSEO,
 } from '../../../API/APIPosts';
 import Tag from './Add/Tag.jsx';
 import Category from './Add/Category.jsx';
@@ -17,6 +18,14 @@ import { APIGetFileById } from '../../../API/APIMedia.js';
 import { notify } from '../../../Utils/Notification';
 import { APIGetPageTemplates, APIUpdatePageTemplateId } from '../../../API/APIPageTemplates.js';
 import Template from './Add/Template.jsx';
+import {
+  APIGetCustomFieldGroupsWhereMatch,
+  APIUpdatePostCustomFieldData,
+} from '../../../API/APICustomFields.js';
+import CustomFields from './Add/CustomFields.jsx';
+import PluginComponents from '../../Utils/PluginComponents.jsx';
+import SEO from './Add/SEO.jsx';
+import Chevrons from '../Chevrons.jsx';
 
 const PostsAddPageContent = () => {
   const { loginPassword } = useContext(APIConnectorContext);
@@ -24,7 +33,6 @@ const PostsAddPageContent = () => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [title, setTitle] = useState('');
-  const [name, setName] = useState('');
   const [featuredImageId, setFeaturedImageId] = useState(null);
   const [featuredImage, setFeaturedImage] = useState(null);
   const [activeContentTab, setActiveContentTab] = useState('visual');
@@ -33,6 +41,23 @@ const PostsAddPageContent = () => {
   const [tagsSelectedIds, setTagsSelectedIds] = useState([]);
   const [templateId, setTemplateId] = useState(-1);
   const [templates, setTemplates] = useState([]);
+  const [reloadMedia, setReloadMedia] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [fieldValues, setFieldValues] = useState({});
+  const [contentExpanded, setContentExpanded] = useState(true);
+  const [customExpanded, setCustomExpanded] = useState(false);
+  const [pageSocialImageId, setPageSocialImageId] = useState(null);
+  const [pageSocialImage, setPageSocialImage] = useState('');
+
+  const [seo, setSEO] = useState({
+    title: '',
+    description: '',
+    ogTitle: '',
+    ogDescription: '',
+    ogUrl: '',
+    ogSiteName: '',
+    socialImageId: null,
+  });
 
   const toggleCategoryCheckbox = (id) => {
     setCategoriesSelectedIds((prev) =>
@@ -74,16 +99,39 @@ const PostsAddPageContent = () => {
     if (templatesData.status == 200) {
       setTemplates(templatesData.data.getPageTemplates.templates);
     }
+
+    const groupsData = await APIGetCustomFieldGroupsWhereMatch(
+      'post_type',
+      'is_equal',
+      'page',
+      loginPassword,
+    );
+
+    if (groupsData.status == 200) {
+      const groupsParsed = JSON.parse(groupsData.data.getCustomFieldGroupsWhereMatch);
+      setGroups(groupsParsed);
+    }
   };
 
   const fetchImageData = async () => {
-    const data = await APIGetFileById(loginPassword, featuredImageId);
+    const data = await APIGetFileById(featuredImageId);
     if (data.status == 200) {
       setFeaturedImage(data.data.getMediaFileById);
     }
   };
 
+  const fetchImageDataSocial = async () => {
+    const data = await APIGetFileById(pageSocialImageId);
+    if (data.status == 200) {
+      setPageSocialImage(data.data.getMediaFileById);
+    }
+  };
+
   const submitDraft = async () => {
+    if (title == '') {
+      notify('Failed to create page, requires a title.', 'error');
+      return;
+    }
     const data = await APISaveDraftNewPage(
       loginPassword,
       title,
@@ -95,10 +143,19 @@ const PostsAddPageContent = () => {
     if (data.status == 200) {
       notify('Successfully created page.', 'success');
       const postId = data.data.createDraftNewPage.post_id;
-
       if (templateId != -1) {
         await APIUpdatePageTemplateId(loginPassword, templateId, postId);
       }
+
+      const formattedFields = Object.entries(fieldValues).map(([groupId, fields]) => ({
+        group_id: groupId,
+        fields: fields,
+      }));
+
+      await APIUpdatePostCustomFieldData(formattedFields, postId, loginPassword);
+      seo.socialImageId = pageSocialImageId;
+      const seoData = JSON.stringify(seo);
+      await APIUpdatePostSEO(loginPassword, seoData, postId);
 
       navigate(`/admin/pages/edit/${postId}`);
       return;
@@ -107,6 +164,10 @@ const PostsAddPageContent = () => {
   };
 
   const submitPublish = async () => {
+    if (title == '') {
+      notify('Failed to create page, requires a title.', 'error');
+      return;
+    }
     const data = await APISavePublishNewPage(
       loginPassword,
       title,
@@ -121,6 +182,17 @@ const PostsAddPageContent = () => {
       if (templateId != -1) {
         await APIUpdatePageTemplateId(loginPassword, templateId, postId);
       }
+
+      const formattedFields = Object.entries(fieldValues).map(([groupId, fields]) => ({
+        group_id: groupId,
+        fields: fields,
+      }));
+      await APIUpdatePostCustomFieldData(formattedFields, postId, loginPassword);
+
+      seo.socialImageId = pageSocialImageId;
+      const seoData = JSON.stringify(seo);
+      await APIUpdatePostSEO(loginPassword, seoData, postId);
+
       navigate(`/admin/pages/edit/${postId}`);
       return;
     }
@@ -132,8 +204,13 @@ const PostsAddPageContent = () => {
   }, []);
 
   useEffect(() => {
+    if (pageSocialImageId != null) {
+      fetchImageDataSocial();
+    }
+  }, [pageSocialImageId]);
+
+  useEffect(() => {
     if (featuredImageId != null) {
-      console.log('featured image id changed');
       fetchImageData();
     }
   }, [featuredImageId]);
@@ -144,23 +221,70 @@ const PostsAddPageContent = () => {
         <div className="w-full md:w-3/4 md:mr-4">
           <TitleBar />
 
-          <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-white w-full mt-8 p-4">
+          <div className="panel mt-8">
             <Title title={title} updateTitle={updateTitle} />
-            <Content
-              activeContentTab={activeContentTab}
-              setActiveContentTab={setActiveContentTab}
-              content={content}
-              HandleContentEditorChange={HandleContentEditorChange}
-              HandleContentChange={HandleContentChange}
-            />
           </div>
+          <div className="panel-no-pad mt-8">
+            <div className="w-full bg-gray-200 p-4 flex flex-row items-center justify-between">
+              <p>Content</p>
+              <Chevrons expanded={contentExpanded} setValue={setContentExpanded} />
+            </div>
+            {contentExpanded && (
+              <div className="p-4">
+                <Content
+                  activeContentTab={activeContentTab}
+                  setActiveContentTab={setActiveContentTab}
+                  content={content}
+                  HandleContentEditorChange={HandleContentEditorChange}
+                  HandleContentChange={HandleContentChange}
+                />
+              </div>
+            )}
+          </div>
+          <div className="panel-no-pad mt-8">
+            <div className="w-full bg-gray-200 p-4 flex flex-row items-center justify-between">
+              <p>Custom Fields</p>
+              <Chevrons expanded={customExpanded} setValue={setCustomExpanded} />
+            </div>
+            {customExpanded && (
+              <div className="p-4">
+                <CustomFields
+                  groups={groups}
+                  fieldValues={fieldValues}
+                  setFieldValues={setFieldValues}
+                />
+              </div>
+            )}
+          </div>
+
+          <SEO
+            seo={seo}
+            setSEO={setSEO}
+            setPageSocialImageId={setPageSocialImageId}
+            setPageSocialImage={setPageSocialImage}
+            pageSocialImage={pageSocialImage}
+            pageSocialImageId={pageSocialImageId}
+          />
+          <PluginComponents page="add_page" loginPassword={loginPassword} />
         </div>
         <div className="w-full md:w-1/4 md:ml-4">
-          <Status submitDraft={submitDraft} submitPublish={submitPublish} />
+          <Status
+            submitDraft={submitDraft}
+            submitPublish={submitPublish}
+            content={content}
+            featuredImage={featuredImage}
+            title={title}
+            categories={categories}
+          />
 
           <Template templates={templates} templateId={templateId} setTemplateId={setTemplateId} />
 
-          <FeaturedImage featuredImage={featuredImage} setFeaturedImageId={setFeaturedImageId} />
+          <FeaturedImage
+            featuredImage={featuredImage}
+            setFeaturedImageId={setFeaturedImageId}
+            reloadMedia={reloadMedia}
+            setReloadMedia={setReloadMedia}
+          />
 
           <Category
             categories={categories}

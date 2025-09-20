@@ -40,13 +40,13 @@ const AppearanceThemes = () => {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = async (isMounted = true) => {
     const activeData = await APIGetTheme();
-    if (activeData.status == 200) {
+    if (isMounted && activeData.status == 200) {
       setActiveTheme(activeData.data.getTheme);
     }
     const data = await APIGetThemes(loginPassword);
-    if (data.status == 200) {
+    if (isMounted && data.status == 200) {
       const allThemes = data.data.getThemes.themes;
 
       const validThemes = allThemes.filter((theme) => {
@@ -65,14 +65,34 @@ const AppearanceThemes = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    let isMounted = true;
+
+    const load = async () => {
+      await fetchData(isMounted);
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (reloadThemes) {
-      fetchData();
-      setReloadThemes(false);
-    }
+    let isMounted = true;
+
+    const reload = async () => {
+      if (reloadThemes) {
+        await fetchData(isMounted);
+        if (isMounted) setReloadThemes(false);
+      }
+    };
+
+    reload();
+
+    return () => {
+      isMounted = false;
+    };
   }, [reloadThemes]);
 
   return (
@@ -80,7 +100,7 @@ const AppearanceThemes = () => {
       <div className="w-full">
         <TitleBar setAddSliderOpen={setAddSliderOpen} />
 
-        <div className="relative overflow-x-auto shadow-md sm:rounded-lg w-full mt-8">
+        <div className="non-padded-panel mt-8">
           <ListView
             themes={themes}
             activeTheme={activeTheme}
@@ -92,7 +112,7 @@ const AppearanceThemes = () => {
           />
         </div>
 
-        <div className="relative overflow-x-auto shadow-md sm:rounded-lg w-full mt-8">
+        <div className="non-padded-panel mt-8">
           <ListView
             themes={invalidThemes}
             activeTheme={activeTheme}

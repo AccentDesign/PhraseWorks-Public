@@ -1,5 +1,4 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { notify } from '../../../../Utils/Notification.jsx';
 import { APIConnectorContext } from '../../../../Contexts/APIConnectorContext';
@@ -52,12 +51,12 @@ const EditTagPanel = ({
 
   return (
     <Transition.Root show={editTagSliderOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-30" onClose={HandleClose}>
+      <Dialog as="div" className="slide-panel" onClose={HandleClose}>
         <div className="fixed inset-0" />
 
-        <div className="fixed inset-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+        <div className="slide-panel-content-wrapper">
+          <div className="slide-panel-content">
+            <div className="slide-panel-content-inner">
               <Transition.Child
                 as={Fragment}
                 enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -91,7 +90,20 @@ const EditTagPanel = ({
                                 >
                                   <span className="absolute -inset-2.5" />
                                   <span className="sr-only">Close panel</span>
-                                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.5"
+                                    stroke="currentColor"
+                                    className="h-6 w-6"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M6 18 18 6M6 6l12 12"
+                                    />
+                                  </svg>
                                 </button>
                               </div>
                             </div>
@@ -103,7 +115,7 @@ const EditTagPanel = ({
                                 placeholder="Name"
                                 autoComplete="Name"
                                 value={name}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
+                                className="input"
                                 required
                                 onChange={(e) => {
                                   setName(e.target.value);
@@ -118,7 +130,7 @@ const EditTagPanel = ({
                                 placeholder="Slug"
                                 autoComplete="Slug"
                                 value={slug}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
+                                className="input"
                                 required
                                 onChange={(e) => {
                                   setSlug(e.target.value);
@@ -137,7 +149,7 @@ const EditTagPanel = ({
                             <div className="flex flex-row justify-end">
                               <button
                                 type="button"
-                                className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+                                className="text-white bg-blue-700 hover:bg-blue-800 btn"
                                 onClick={submitUpdate}
                               >
                                 <svg

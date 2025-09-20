@@ -10,30 +10,23 @@ const ListView = ({
   updateActiveTheme,
 }) => {
   return (
-    <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-      <thead className="text-xs text-gray-700 uppercase bg-gray-200  ">
+    <table className="table table-striped">
+      <thead>
         <tr>
-          <th scope="col" className="px-6 py-3 w-[100px]"></th>
-          <th scope="col" className="px-6 py-3 w-3/4">
+          <th scope="col" className="w-[100px]"></th>
+          <th scope="col" className="w-3/4">
             Name
           </th>
-          <th scope="col" className="px-6 py-3 w-1/4">
+          <th scope="col" className="w-1/4">
             Location
           </th>
         </tr>
       </thead>
       <tbody>
         {themes.map((theme, idx) => (
-          <tr
-            key={idx}
-            className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
-          >
-            <td className={`px-6 py-4`}>
-              <button
-                type="button"
-                className="cursor-pointer text-gray-700 hover:text-red-500"
-                onClick={() => deleteTheme(theme.id)}
-              >
+          <tr key={idx}>
+            <td>
+              <button type="button" className="bin-btn" onClick={() => deleteTheme(theme.id)}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -48,11 +41,11 @@ const ListView = ({
                 </svg>
               </button>
             </td>
-            <td className={`px-6 py-4 flex flex-col`}>
-              <div className="flex flex-row items-center">
+            <td className="flex flex-col">
+              <div className="flex-center">
                 <button
                   type="button"
-                  className="text-blue-800 hover:text-blue-500"
+                  className="link-bold"
                   onClick={() => {
                     setThemeToEdit(theme);
                     setEditSliderOpen(true);
@@ -60,21 +53,21 @@ const ListView = ({
                 >
                   {theme.name}
                   {valid == false && (
-                    <span className="text-sm text-red-500">
+                    <span className="text-red-normal">
                       {' '}
                       - Invalid, this has no folder or files in the location
                     </span>
                   )}
                 </button>
                 {theme.name == activeTheme.name && (
-                  <div className="text-green-500 ml-4">Active</div>
+                  <div className="text-green-normal ml-2">Active</div>
                 )}
               </div>
               <div className="flex flex-row items-center gap-4">
                 {theme.name != activeTheme.name && (
                   <p>
                     <button
-                      className={`text-blue-700 text-xs underline underline-offset-4 hover:text-blue-500 ${
+                      className={`activate-btn ${
                         valid == false ? 'cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       disabled={valid === false}
@@ -86,7 +79,7 @@ const ListView = ({
                 )}
               </div>
             </td>
-            <td className="px-6 py-4">{theme.location}</td>
+            <td>{theme.location}</td>
           </tr>
         ))}
       </tbody>

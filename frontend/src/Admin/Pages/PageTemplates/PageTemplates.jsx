@@ -1,5 +1,4 @@
 import React from 'react';
-import VerifyLogin from '../../../VerifyLogin';
 import Header from '../../Components/Header';
 import Footer from '../../Components/Footer';
 import PageContent from '../../Components/PageContent.jsx';
@@ -8,14 +7,14 @@ import PageTemplatesPageContent from '../../Components/PageTemplates/PageTemplat
 const PageTemplates = ({ siteTitle }) => {
   document.title = `Page Templates - ${siteTitle}`;
   return (
-    <VerifyLogin>
+    <>
       <Header />
 
       <PageContent>
         <PageTemplatesPageContent />
       </PageContent>
       <Footer />
-    </VerifyLogin>
+    </>
   );
 };
 

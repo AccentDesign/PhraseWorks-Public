@@ -6,16 +6,49 @@ import {
   APIUpdatePostStatus,
 } from '../../../../API/APIPosts';
 import DatePicker from '../../../../Utils/Datepicker';
+import PreviewPost from '../../../Utils/PreviewPost';
+import DateTimePicker from '../../../../Utils/DateTimePicker';
 
-const Status = ({ updatePost, post, setReloadPost }) => {
+const Status = ({
+  updatePost,
+  post,
+  setReloadPost,
+  content,
+  featuredImage,
+  title,
+  categories,
+  scheduleDate,
+  setScheduleDate,
+}) => {
   const { loginPassword } = useContext(APIConnectorContext);
   const [statusEdit, setStatusEdit] = useState(false);
   const [status, setStatus] = useState('draft');
   const [publishDateEdit, setPublishDateEdit] = useState(false);
+  const [scheduleDateEdit, setScheduleDateEdit] = useState(false);
   const [publishDate, setPublishDate] = useState('');
   const [visibilityEdit, setVisibilityEdit] = useState(false);
   const [visibility, setVisibility] = useState(false);
   const [password, setPassword] = useState('');
+
+  const [tmpPublishDate, setTmpPublishDate] = useState();
+  const formatPublishDate = (isoString) => {
+    if (!isoString) return null;
+
+    const d = new Date(isoString);
+
+    if (isNaN(d)) return null;
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
 
   const updatePublishDate = (value) => {
     const [day, month, year] = value.split('/').map(Number);
@@ -26,12 +59,18 @@ const Status = ({ updatePost, post, setReloadPost }) => {
     setPublishDate(isoSafe);
   };
 
-  const updatePostStatus = async () => {
-    const data = await APIUpdatePostStatus(loginPassword, status, post.id);
+  const updatePostStatus = async (reload = true, statusValue = null) => {
+    const data = await APIUpdatePostStatus(
+      loginPassword,
+      statusValue == null ? status : statusValue,
+      post.id,
+    );
     if (data.status == 200) {
       if (data.data.updatePostStatus.success) {
-        setReloadPost(true);
-        setStatusEdit(false);
+        if (reload) {
+          setReloadPost(true);
+          setStatusEdit(false);
+        }
       }
     }
   };
@@ -90,14 +129,20 @@ const Status = ({ updatePost, post, setReloadPost }) => {
       }
     }
   }, [post]);
+
   return (
     <div className="panel">
       <h3 className="font-bold text-lg">Publish</h3>
       <hr className="my-4" />
       <div className="flex flex-row justify-end items-center">
-        <button type="button" className="secondary-btn">
-          Preview Changes
-        </button>
+        <PreviewPost
+          post={post}
+          content={content}
+          featuredImage={featuredImage}
+          title={title}
+          categories={categories}
+          type="post"
+        />
       </div>
       <div className="flex flex-col gap-2 items-start mt-4">
         <div className="flex flex-row items-center">
@@ -114,7 +159,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
             />
           </svg>
           <p>
-            Status: <strong>{post?.post_status.replace(/\b\w/g, (c) => c.toUpperCase())}</strong>{' '}
+            Status: <strong>{status.replace(/\b\w/g, (c) => c.toUpperCase())}</strong>{' '}
             {statusEdit == false && (
               <button
                 className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
@@ -129,10 +174,11 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <div className="flex flex-row items-center gap-4">
             <select
               name="status"
-              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
+              <option value="scheduled">Scheduled</option>
               <option value="publish">Published</option>
               <option value="pending">Pending Review</option>
               <option value="draft">Draft</option>
@@ -191,7 +237,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <div className="flex flex-row items-center gap-4">
             <select
               name="status"
-              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               value={visibility}
               onChange={(e) => setVisibility(e.target.value)}
             >
@@ -223,7 +269,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <p>
             <input
               type="password"
-              className="w-full bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="w-full bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               placeholder="Password"
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -245,15 +291,39 @@ const Status = ({ updatePost, post, setReloadPost }) => {
               clipRule="evenodd"
             />
           </svg>
-          <div>
-            Published on: <strong>{new Date(post?.post_date).toDateString()}</strong>{' '}
-            <button
-              className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
-              onClick={() => setPublishDateEdit(true)}
-            >
-              Edit
-            </button>
-          </div>
+          {post?.post_status == 'publish' ? (
+            <div>
+              Published on:{' '}
+              <strong>{post?.post_date ? new Date(post?.post_date).toDateString() : '-'}</strong>{' '}
+              <button
+                className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
+                onClick={() => setPublishDateEdit(true)}
+              >
+                Edit
+              </button>
+            </div>
+          ) : (
+            <p>
+              Schedule:{' '}
+              {scheduleDate ? (
+                formatPublishDate(scheduleDate)
+              ) : (
+                <>
+                  {status == 'scheduled' ? (
+                    <strong>immediately</strong>
+                  ) : (
+                    <strong>date not set</strong>
+                  )}
+                </>
+              )}{' '}
+              <button
+                className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
+                onClick={() => setScheduleDateEdit(true)}
+              >
+                Edit
+              </button>
+            </p>
+          )}
         </div>
         {publishDateEdit && (
           <div className="flex flex-row items-center gap-4">
@@ -281,6 +351,40 @@ const Status = ({ updatePost, post, setReloadPost }) => {
             </button>
           </div>
         )}
+        {scheduleDateEdit && (
+          <div className="flex flex-row items-center gap-4">
+            <DateTimePicker
+              key={`dp-${tmpPublishDate}`}
+              id="release-date"
+              date={tmpPublishDate}
+              updateFunction={setTmpPublishDate}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+            />
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={async () => {
+                setScheduleDateEdit(false);
+                setScheduleDate(tmpPublishDate);
+                setStatus('scheduled');
+                updatePostStatus(false, 'scheduled');
+
+                await APIUpdatePostPublishDate(loginPassword, tmpPublishDate, post.id);
+              }}
+            >
+              Ok
+            </button>
+            <button
+              type="button"
+              className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
+              onClick={() => setScheduleDateEdit(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
       <div
         className={`flex flex-row justify-${post?.post_status == 'trash' ? 'end' : 'between'} mt-4`}
@@ -298,7 +402,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
         )}
         <button
           type="button"
-          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
           onClick={() => {
             updatePost();
           }}

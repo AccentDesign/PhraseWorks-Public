@@ -1,22 +1,60 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-.tox-tinymce {
-  z-index: 10 !important;
-}
-.tox-statusbar__branding {
-  display: none !important;
-}
-.tox-promotion,
-.tox-notification--warning,
-.tox-statusbar__branding {
-  display: none !important;
-}
-.secondary-btn {
-  @apply flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 border border-gray-200 rounded-lg bg-gray-100 hover:bg-gray-200;
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+
+  --color-dark-teal: #050a30;
+  --color-mid-teal: #2b6454;
+  --color-light-teal: #4a9582;
+  --color-lighter-teal: #63c2aa;
+  --color-cararra: #eaeae1;
+  --color-send-samples: #dd4b39;
+  --color-send-samples-dark: #c23321;
+  --color-sand: #f5efeb;
+
+  /* ✅ renamed these */
+  --color-menu-primary: #4c4c75;
+  --color-menu-hover: #272832;
+  --color-menu-accent: #7373fb;
+  --color-menu-text: #c9c9c9;
+  --color-scrollbar-thumb: #6060d0ff;
+  --color-scrollbar-hover: #5252b4ff;
+  --color-border: #d1d5db;
 }
 
-.panel {
-  @apply relative bg-white overflow-x-auto shadow-md sm:rounded-lg w-full p-4;
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body,
+#root {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Ensure all text elements inherit the font */
+*,
+*::before,
+*::after {
+  font-family: inherit;
+}
+
+button {
+  @apply cursor-pointer;
+}
+
+.loading-status {
+  @apply fixed inset-0 bg-gray-200/60 flex items-center justify-center z-50;
+}
+
+.loading-wrapper {
+  @apply flex flex-col items-center justify-center;
+}
+
+.loading-spinner {
+  @apply w-12 h-12 text-gray-200 animate-spin fill-blue-600;
+}
+
+hr {
+  @apply border-gray-300;
 }

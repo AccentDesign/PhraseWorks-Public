@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { createContext, useState, useMemo, useCallback, useContext } from 'react';
 import { notify } from '../Utils/Notification';
 import { APIConnectorContext } from './APIConnectorContext';
@@ -9,26 +10,27 @@ export const UserContext = createContext(null);
 export function UserContextProvider({ children }) {
   const { apiBase, setLoginPassword } = useContext(APIConnectorContext);
   const [loggedIn, setLoggedIn] = useState(false);
-  const localUserObj = JSON.parse(sessionStorage.getItem('userObj'))
-    ? JSON.parse(sessionStorage.getItem('userObj'))
+  const localUserObj = JSON.parse(localStorage.getItem('userObj'))
+    ? JSON.parse(localStorage.getItem('userObj'))
     : null;
 
   const [user, setUser] = useState(localUserObj ?? null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const LoginUser = useCallback(
     async (email, password) => {
       const data = await APIGetLoginToken(email, password, graphqlUrl);
       if (data.status != 200) {
-        sessionStorage.removeItem('loggedIn');
+        localStorage.removeItem('loggedIn');
         setLoggedIn(false);
         setUser(null);
         notify('There was an error communicating with the server', 'error');
       } else {
-        if (data.data.login.token) {
+        if (data.data?.login.token) {
           const user = data.data.login.user[0];
 
-          sessionStorage.setItem('loggedIn', true);
-          sessionStorage.setItem('userObj', JSON.stringify(user));
+          localStorage.setItem('loggedIn', true);
+          localStorage.setItem('userObj', JSON.stringify(user));
           setLoggedIn(true);
 
           setLoginPassword(data.data.login.token);
@@ -37,13 +39,17 @@ export function UserContextProvider({ children }) {
           let expiryDate = new Date();
           expiryDate.setHours(expiryDate.getHours() + 1);
           localStorage.setItem('loginExpiry', expiryDate.toISOString());
+
+          const refreshExpiryDate = new Date();
+          refreshExpiryDate.setDate(refreshExpiryDate.getDate() + 7);
+          localStorage.setItem('refreshExpiry', refreshExpiryDate.toISOString());
           notify('You have logged in succesfully', 'success');
           return true;
         } else {
-          sessionStorage.removeItem('loggedIn');
+          localStorage.removeItem('loggedIn');
           setLoggedIn(false);
           setUser(null);
-          notify('Incorrect Token', 'error');
+          notify('Incorrect Password', 'error');
         }
       }
       return false;
@@ -52,63 +58,92 @@ export function UserContextProvider({ children }) {
   );
 
   const LogoutUser = useCallback(async () => {
-    sessionStorage.removeItem('loggedIn');
-    sessionStorage.removeItem('userObj');
+    localStorage.removeItem('loggedIn');
+
+    localStorage.clear();
+    localStorage.removeItem('userObj');
     setLoggedIn(false);
     setUser(null);
     notify('You have logged out succesfully', 'success');
     return true;
   }, []);
 
-  const VerifyUserLogin = async (navigateTo) => {
-    const currentTokenStorage = localStorage.getItem('loginPassword');
-    const expiryDateStorage = localStorage.getItem('loginExpiry');
+  const verifyToken = async () => {
+    const path = window.location.pathname;
 
-    if (expiryDateStorage) {
-      let expiryDate = new Date(expiryDateStorage);
-      let currentDate = new Date();
-      if (expiryDate >= currentDate) {
-        if (currentTokenStorage != null) {
-          return true;
-        } else {
-          setLoggedIn(false);
-          setUser(null);
-          notify('Your login data is incorrect, please log back in', 'error');
-          navigateTo('/login');
+    const isAdminRoute = path.startsWith('/admin');
+    if (isAdminRoute) {
+      const expiryDateStorage = localStorage.getItem('loginExpiry');
+      const refreshTokenStorage = localStorage.getItem('refreshToken');
+      const refreshExpiryStorage = localStorage.getItem('refreshExpiry');
+      const isOnLoginPage = window.location.pathname === '/login';
+
+      const now = new Date();
+
+      if (!refreshExpiryStorage || now > new Date(refreshExpiryStorage)) {
+        localStorage.clear();
+        localStorage.removeItem('userObj');
+        if (!isOnLoginPage) {
+          window.location.href = '/login?redirect=/admin';
         }
-      } else {
-        const refreshTokenStorage = localStorage.getItem('refreshToken');
-        const data = await APIGetRefreshFromToken(refreshTokenStorage, graphqlUrl);
-        if (data.status == 200) {
-          const user = data.data.refresh.user[0];
-          setUser(user);
+        return;
+      }
 
-          sessionStorage.setItem('loggedIn', true);
-          sessionStorage.setItem('userObj', JSON.stringify(user));
-          setLoggedIn(true);
-
-          setLoginPassword(data.data.refresh.token);
-          localStorage.setItem('loginPassword', data.data.refresh.token);
-          localStorage.setItem('refreshToken', data.data.refresh.refreshToken);
-          let expiryDate = new Date();
-          expiryDate.setHours(expiryDate.getHours() + 1);
-          localStorage.setItem('loginExpiry', expiryDate.toISOString());
-          window.location.reload();
+      if (refreshExpiryStorage) {
+        const refreshExpiry = new Date(refreshExpiryStorage);
+        if (now > refreshExpiry) {
+          localStorage.clear();
+          if (!isOnLoginPage) {
+            window.location.href = '/login';
+          }
           return;
-        } else {
-          notify('Your refresh token has expired, please log back in', 'error');
-          localStorage.removeItem('loginPassword');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('loginExpiry');
-          navigateTo('/login');
         }
       }
-    } else {
-      setLoggedIn(false);
-      setUser(null);
-      notify('Your access token has expired, please log back in', 'error');
-      navigateTo('/login');
+
+      if (expiryDateStorage) {
+        const accessExpiry = new Date(expiryDateStorage);
+        if (now > accessExpiry) {
+          const localUserObj = JSON.parse(localStorage.getItem('userObj'))
+            ? JSON.parse(localStorage.getItem('userObj'))
+            : null;
+          const data = await APIGetRefreshFromToken(
+            refreshTokenStorage,
+            localUserObj.id,
+            graphqlUrl,
+          );
+
+          if (data.status === 200) {
+            const refreshExpiry = new Date(data.data.refresh.refreshTokenExpiry * 1000);
+            setLoginPassword(data.data.refresh.token);
+            localStorage.setItem('loginPassword', data.data.refresh.token);
+            localStorage.setItem('refreshToken', data.data.refresh.refreshToken);
+            localStorage.setItem('refreshExpiry', refreshExpiry.toISOString());
+
+            const newAccessExpiry = new Date();
+            newAccessExpiry.setHours(newAccessExpiry.getHours() + 1);
+            localStorage.setItem('loginExpiry', newAccessExpiry.toISOString());
+
+            window.location.reload();
+          } else {
+            localStorage.clear();
+            if (!isOnLoginPage) {
+              window.location.href = '/login';
+            }
+          }
+          return;
+        } else {
+          const localUserObj = JSON.parse(localStorage.getItem('userObj'))
+            ? JSON.parse(localStorage.getItem('userObj'))
+            : null;
+          setUser(localUserObj);
+          localStorage.setItem('loggedIn', true);
+          setLoggedIn(true);
+          setIsLoading(false);
+          return;
+        }
+      }
     }
+    setIsLoading(false);
   };
 
   const userContext = useMemo(
@@ -119,9 +154,10 @@ export function UserContextProvider({ children }) {
       setUser,
       LoginUser,
       LogoutUser,
-      VerifyUserLogin,
+      verifyToken,
+      isLoading,
     }),
-    [loggedIn, setLoggedIn, user, setUser, LoginUser, LogoutUser, VerifyUserLogin],
+    [loggedIn, setLoggedIn, user, setUser, LoginUser, LogoutUser, verifyToken, isLoading],
   );
 
   return <UserContext.Provider value={userContext}>{children}</UserContext.Provider>;

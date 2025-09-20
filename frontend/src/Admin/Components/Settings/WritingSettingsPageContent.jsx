@@ -51,7 +51,7 @@ const WritingSettingsPageContent = () => {
           <label className="block">Default Post Category</label>
           <select
             id="defaultPostCategory"
-            className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-full md:w-1/2"
+            className="select"
             value={postCatgegory}
             onChange={(e) => setPostCategory(e.target.value)}
           >
@@ -65,7 +65,7 @@ const WritingSettingsPageContent = () => {
           <div className="flex flex-row justify-end mt-8">
             <button
               type="button"
-              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+              className="text-white bg-blue-700 hover:bg-blue-800 btn"
               onClick={submitUpdate}
             >
               <svg

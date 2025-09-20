@@ -1,5 +1,7 @@
+import { graphqlUrl } from '../config';
+
 export const APIGetLoginToken = async (email, password, graphQlUrl) => {
-  const Query = `query { login(email: \"${email}\", password: \"${password}\") { token refreshToken userId user { id user_login user_nicename user_email user_registered user_status display_name first_name last_name } } }`;
+  const Query = `query { login(email: \"${email}\", password: \"${password}\") { token refreshToken userId user { id user_login user_nicename user_email user_registered user_status display_name first_name last_name user_role { role id } } } }`;
   const formData = {};
   formData.query = Query;
   const url = `${graphQlUrl}graphql`;
@@ -29,11 +31,10 @@ export const APIGetLoginToken = async (email, password, graphQlUrl) => {
   }
 };
 
-export const APIGetRefreshFromToken = async (refreshToken, graphQlUrl) => {
-  console.log('hitting it...');
+export const APIGetRefreshFromToken = async (refreshToken, userId, graphQlUrl) => {
   const Query = `query { 
-    refresh(refreshToken: \"${refreshToken}\") { 
-      token refreshToken userId user { id user_login user_nicename user_email user_registered user_status display_name first_name last_name } } }`;
+    refresh(refreshToken: \"${refreshToken}\", userId: ${userId}) { 
+      token refreshToken refreshTokenExpiry userId user { id user_login user_nicename user_email user_registered user_status display_name first_name last_name } } }`;
   const formData = {};
   formData.query = Query;
   formData.operation = 'refresh';
@@ -48,82 +49,24 @@ export const APIGetRefreshFromToken = async (refreshToken, graphQlUrl) => {
     },
   });
   const data = await response.json();
-  console.log(data);
   if (response.status == 200) {
     return {
-      status: 200, //response.status,
+      status: 200,
       data: data.data,
     };
   } else if (response.status == 500) {
     return { status: 401, data: { error: 'Invalid Token' } };
   } else {
     return {
-      status: 403, //response.status,
+      status: 403,
       data: { error: 'Invalid Token' },
     };
   }
 };
 
-// export const APIGetCustomerMetaData = async (apiBase, loginPassword, userId) => {
-//   const query = `query { getCustomerMetaData(userId: ${userId}) { firstName lastName companyName companyWebsite jobTitle email address1 address2 address3 postcode telephone mobileTelephone } }`;
-//   const url = `${apiBase}graphql`;
-//   const response = await fetch(url, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer ${loginPassword}`,
-//     },
-//     body: JSON.stringify({ query: query }),
-//   });
-//   const data = await response.json();
-//   return {
-//     status: response.status,
-//     data: data.data,
-//   };
-// };
-
-// export const APIUpdateUserMetaData = async (apiBase, loginPassword, userId, submitData) => {
-//   const query = `mutation { updateCustomerMetaData(input: {userId: ${userId}, submitData: \"${JSON.stringify(
-//     submitData,
-//   ).replace(/"/g, '\\"')}\"}) { success } }`;
-//   const url = `${apiBase}graphql`;
-//   const response = await fetch(url, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer ${loginPassword}`,
-//     },
-//     body: JSON.stringify({ query: query }),
-//   });
-//   const data = await response.json();
-//   return {
-//     status: response.status,
-//     data: data.data,
-//   };
-// };
-
-// export const APICreateAccount = async (apiBase, submitData) => {
-//   const query = `mutation { createCustomerAccount(input: {submitData: \"${JSON.stringify(
-//     submitData,
-//   ).replace(/"/g, '\\"')}\"}) { success } }`;
-//   const url = `${apiBase}graphql`;
-//   const response = await fetch(url, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({ query: query }),
-//   });
-//   const data = await response.json();
-//   return {
-//     status: response.status,
-//     data: data.data,
-//   };
-// };
-
-export const APIForgottenPassword = async (apiBase, email) => {
-  const query = `mutation { forgottenPassword(input: { email: \"${email}\"}) { success } }`;
-  const url = `${apiBase}graphql`;
+export const APIForgottenPassword = async (email) => {
+  const query = `mutation { forgottenPassword( email: \"${email}\") { success } }`;
+  const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -138,9 +81,9 @@ export const APIForgottenPassword = async (apiBase, email) => {
   };
 };
 
-export const APIResetPassword = async (apiBase, token, password) => {
-  const query = `mutation { resetPassword(input: { token: \"${token}\", password: \"${password}\"}) { success } }`;
-  const url = `${apiBase}graphql`;
+export const APIResetPassword = async (token, password) => {
+  const query = `mutation { resetPassword(token: \"${token}\", password: \"${password}\") { success } }`;
+  const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {

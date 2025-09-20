@@ -1,0 +1,33 @@
+@reference "../../index.css";
+
+.content {
+  @apply !bg-[#f5efeb];
+}
+
+.header {
+  @apply bg-green-900;
+}
+.header-link {
+  @apply flex no-underline text-menu-text py-[1em] px-[2em] transition-colors duration-150 ease-linear hover:bg-green-700;
+}
+
+.active-link {
+  @apply border-b-2 border-b-menu-text bg-black hover:bg-green-700;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  @apply bg-menu-hover;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-scrollbar-thumb;
+  border-radius: 9999px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-scrollbar-hover;
+}

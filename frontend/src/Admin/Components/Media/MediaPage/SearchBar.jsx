@@ -2,8 +2,8 @@ import React from 'react';
 
 const SearchBar = ({ view, setView, search, setSearch, type, setType }) => {
   return (
-    <div className="relative bg-white shadow-md dark:bg-gray-800 sm:rounded-lg mt-4">
-      <div className="flex flex-col items-center justify-between p-4 space-y-3 md:flex-row md:space-y-0 md:space-x-4">
+    <div className="relative bg-white shadow-md sm:rounded-lg mt-4">
+      <div className="media-menu-start">
         <div className="w-full md:w-1/2">
           <form className="flex items-center">
             <div className="mr-2 flex flex-row items-center">
@@ -56,10 +56,10 @@ const SearchBar = ({ view, setView, search, setSearch, type, setType }) => {
               Search
             </label>
             <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <div className="search-input-icon">
                 <svg
                   aria-hidden="true"
-                  className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                  className="w-5 h-5 text-gray-500"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   xmlns="http://www.w3.org/2000/svg"
@@ -74,7 +74,7 @@ const SearchBar = ({ view, setView, search, setSearch, type, setType }) => {
               <input
                 type="text"
                 id="simple-search"
-                className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                className="search-input"
                 placeholder="Search"
                 required=""
                 value={search}
@@ -83,11 +83,11 @@ const SearchBar = ({ view, setView, search, setSearch, type, setType }) => {
             </div>
           </form>
         </div>
-        <div className="flex flex-col items-stretch justify-end flex-shrink-0 w-full space-y-2 md:w-auto md:flex-row md:space-y-0 md:items-center md:space-x-3">
+        <div className="media-menu-end">
           <div className="flex items-center w-full space-x-3 md:w-auto">
             <select
               id="filter"
-              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="select"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >

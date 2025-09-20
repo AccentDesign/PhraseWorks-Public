@@ -5,7 +5,7 @@ const ActionsButton = ({ bulkAction, setBulkAction, handleApply }) => {
     <div className="flex flex-row items-center mt-4">
       <select
         id="actionsDropdown"
-        className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+        className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
         value={bulkAction}
         onChange={(e) => setBulkAction(e.target.value)}
       >
@@ -14,7 +14,7 @@ const ActionsButton = ({ bulkAction, setBulkAction, handleApply }) => {
       </select>
       <button
         type="button"
-        className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+        className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
         onClick={handleApply}
       >
         <svg

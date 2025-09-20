@@ -1,20 +1,11 @@
-import postgres from 'postgres';
+import sql from './db.js';
 
 export const dbMiddleware = async (c, next) => {
-  const env = c.env;
-
+  c.set('connection', sql);
   try {
-    const sql = postgres(env.HYPERDRIVE.connectionString, {
-      max: 5,
-      fetch_types: false,
-    });
-
-    // Set DB client into context
-    c.set('connection', sql);
+    await next();
   } catch (err) {
-    console.error('Database connection failed:', err);
-    c.set('connection', null);
+    console.error('Error in dbMiddleware next:', err);
+    throw err;
   }
-
-  await next();
 };

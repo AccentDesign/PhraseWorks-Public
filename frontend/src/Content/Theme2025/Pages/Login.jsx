@@ -1,53 +1,33 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { UserContext } from '../../../Contexts/UserContext';
-import { notify } from '../../../Utils/Notification';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { UserContext } from '@/Contexts/UserContext';
 import Password from '../Components/Login/Password';
-import { generatePassword, getPasswordStrength } from '../../../Utils/Users';
-import { APICreateNewPassword } from '../../../API/APIUsers';
+import { generatePassword, getPasswordStrength, LoginSubmit } from '@/Includes/Users';
+import HeadMeta from '@/Utils/HeadMeta';
+import SignInForm from '@/Includes/Shortcodes/SignInForm';
+import ForgottenPasswordForm from '../../../Includes/Shortcodes/ForgottenPasswordForm';
+import { APIForgottenPassword, APIResetPassword } from '../../../API/APIAuth';
+import { notify } from '../../../Utils/Notification';
 
 const Login = () => {
-  document.title = 'Login';
   const { LoginUser } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [action, setAction] = useState(null);
   const [key, setKey] = useState(null);
+  const [token, setToken] = useState(null);
   const [login, setLogin] = useState(null);
+  const [hide, setHide] = useState(true);
+  const [resetDone, setResetDone] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const redirect = queryParams.get('redirect') || '/';
 
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [email2, setEmail2] = useState('');
   const [redirectToHome, setRedirectToHome] = useState(false);
-
-  const LoginSubmit = async (e) => {
-    e.preventDefault();
-    if (password != '') {
-      const result = await LoginUser(email, password);
-      if (result == true) {
-        setRedirectToHome(true);
-      }
-    } else {
-      notify('Incorrect Password', 'error');
-    }
-  };
-
-  const submitNewPassword = async () => {
-    const data = await APICreateNewPassword(password, login, key);
-    if (data.status == 200) {
-      if (data.data.createNewPassword.success == true) {
-        if (data.data.createNewPassword.success === true) {
-          notify('Password successfully updated.', 'success');
-          setPassword('');
-          navigate('/login', { replace: true });
-        }
-      }
-    } else {
-      notify('Incorrect Key', 'error');
-    }
-  };
+  const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     if (redirectToHome) {
@@ -58,89 +38,123 @@ const Login = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     setAction(searchParams.get('action'));
-    if (searchParams.get('action') == 'rp') setPassword(generatePassword());
     setKey(searchParams.get('key'));
+    setToken(searchParams.get('token'));
     setLogin(searchParams.get('login'));
   }, [location]);
 
+  const calculateForgottenPasswordErrors = (values) => {
+    const tmpErrors = [];
+    if (values.email != values.email2) {
+      tmpErrors.push({ field: 'confirmEmail', error: 'Email addresses must match' });
+    }
+    setErrors(tmpErrors);
+  };
+
+  const ForgottenPasswordSubmit = async () => {
+    if (errors.length > 0) return;
+    const data = await APIForgottenPassword(email);
+    if (data.status == 200 && data.data.forgottenPassword.success) {
+      setResetDone(true);
+    }
+  };
+
+  const ResetPassword = async () => {
+    const data = await APIResetPassword(token, password);
+    if (data.status == 200 && data.data.resetPassword.success) {
+      notify('Successfully changed password', 'success');
+      navigate('/login');
+    }
+  };
+
   return (
-    <div className="bg-gradient-to-b from-dark-teal from-20% to-mid-teal bg-fixed min-h-screen top-0">
-      <div className="flex flex-col md:flex-row min-h-screen px-8 md:px-0">
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-row min-h-screen justify-end items-center md:mr-16">
-            <div className="w-full md:w-[500px]">
-              <div className="flex align-items-center mb-2 justify-between">
-                <img
-                  src="/images/accent-logo-desktop-white.svg"
-                  width="229"
-                  height="62"
-                  alt="Logo"
-                />
-              </div>
-              {action == null ? (
-                <>
-                  <h1 className="h2 text-white text-2xl">Sign in</h1>
-                  <form className="space-y-4 md:space-y-4 mt-4" action="#">
-                    <div>
-                      <input
-                        type="email"
-                        name="email"
-                        id="email"
-                        placeholder="Email"
-                        autoComplete="Current Email"
-                        value={email}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-                        required=""
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        placeholder="Password"
-                        autoComplete="Current Password"
-                        value={password}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-                        required=""
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full cursor-pointer text-white bg-mid-teal hover:bg-lighter-teal focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                      onClick={(e) => LoginSubmit(e)}
-                    >
-                      Sign in
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <h1 className="h2 mb-4 text-white text-2xl">Set Password</h1>
-                  <Password
-                    getPasswordStrength={getPasswordStrength}
-                    password={password}
-                    setPassword={setPassword}
-                  />
-                  <button
-                    type="submit"
-                    className="mt-4 w-full cursor-pointer text-white bg-mid-teal hover:bg-lighter-teal focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                    onClick={() => submitNewPassword()}
-                  >
-                    Save
-                  </button>
-                </>
-              )}
-            </div>
+    <>
+      <HeadMeta
+        pageTitle="Login"
+        description="Secure login page for accessing your account and managing your dashboard."
+      />
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+          <div className="text-center">
+            <a href="/">
+              <img
+                src="/images/pw-full.svg"
+                className="w-[220px] inline-block"
+                alt="Logo Image"
+                loading="lazy"
+              />
+            </a>
           </div>
-        </div>
-        <div className="w-full md:w-1/2">
-          <div className="flex flex-row min-h-screen justify-center items-center md:ml-16"></div>
+          {action == 'forgottenPassword' ? (
+            <>
+              {resetDone == false ? (
+                <ForgottenPasswordForm
+                  email={email}
+                  setEmail={setEmail}
+                  email2={email2}
+                  setEmail2={setEmail2}
+                  ForgottenPasswordSubmit={ForgottenPasswordSubmit}
+                  errors={errors}
+                  setErrors={setErrors}
+                  calculateForgottenPasswordErrors={calculateForgottenPasswordErrors}
+                />
+              ) : (
+                <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50" role="alert">
+                  <span class="font-medium">Success!</span> Please check your email for the next
+                  step in changing your password.
+                </div>
+              )}
+            </>
+          ) : action == 'reset-password' ? (
+            <>
+              <div className="text-center">
+                <h1 className="text-gray-900 text-3xl mt-4 font-medium">Reset Password</h1>
+                <p className="text-gray-500 text-sm mt-2">Please fill in to continue</p>
+              </div>
+              <Password
+                getPasswordStrength={getPasswordStrength}
+                password={password}
+                setPassword={setPassword}
+                hide={hide}
+                setHide={setHide}
+              />
+
+              <button
+                type="button"
+                className="mt-4 w-full cursor-pointer text-white bg-menu-accent hover:bg-menu-primary rounded-full focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center"
+                onClick={(e) => {
+                  e.preventDefault(); // stops form submit
+                  ResetPassword();
+                }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <SignInForm
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                LoginSubmit={(e) => {
+                  e.preventDefault();
+                  LoginSubmit(password, email, setRedirectToHome, LoginUser);
+                }}
+              />
+              <div className="flex justify-end mt-2">
+                <Link
+                  to="/login?action=forgottenPassword"
+                  className="text-blue-500 hover:text-blue-800 hover:underline hover:underline-offset-4"
+                >
+                  Forgotten Password
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

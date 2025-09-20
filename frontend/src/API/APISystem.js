@@ -1,4 +1,5 @@
-import { graphqlUrl } from '../config';
+import { graphqlUrl } from '../config.js';
+
 export const APICheckSystem = async () => {
   const query = `query {systemCheck { success error } }`;
   const url = `${graphqlUrl}graphql`;
@@ -296,7 +297,26 @@ export const APIUpdateTheme = async (loginPassword, name, location, themeId) => 
 };
 
 export const APIGetDashboardAtAGlanceData = async (loginPassword) => {
-  const query = `query {getDashboardAtAGlanceData { version posts pages } }`;
+  const query = `query {getDashboardAtAGlanceData { version posts pages comments } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetDashboardActivity = async (loginPassword) => {
+  const query = `query { getDashboardActivityData { posts { id post_date post_title post_status post_type } total } }`;
   const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
@@ -372,6 +392,44 @@ export const APIGetMenuByName = async (name) => {
   };
 };
 
+export const APIGetAdminMenus = async (loginPassword) => {
+  const query = `query { getAdminMenus }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetAdminPages = async (loginPassword) => {
+  const query = `query { getAdminPages }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
 export const APIGetEmailSettings = async (loginPassword) => {
   const query = `query {getEmailSettings { data } }`;
   const url = `${graphqlUrl}graphql`;
@@ -414,6 +472,281 @@ export const APIUpdateEmailSettings = async (loginPassword, settingsData) => {
 
 export const APISendTestEmail = async (loginPassword, toAddress) => {
   const query = `mutation { sendTestEmail(toAddress: \"${toAddress}\") { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPlugins = async (loginPassword) => {
+  const query = `query { getPlugins }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPluginComponentsByPage = async (loginPassword, pageKey) => {
+  const query = `query { getPluginPageComponents(pageKey: \"${pageKey}\") }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIUpdatePlugins = async (loginPassword, plugins) => {
+  const query = `mutation { updatePlugins(plugins: ${JSON.stringify(
+    JSON.stringify(plugins),
+  )}) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetSiteSEOSettings = async () => {
+  const query = `query { getSiteSEOSettings }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIUpdateSiteSEOSettings = async (loginPassword, seoSettings) => {
+  const query = `mutation { updateSiteSEOSettings(seoSettings: ${JSON.stringify(
+    JSON.stringify(seoSettings),
+  )}) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetShortcodes = async () => {
+  const query = `query { getShortcodes }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIRegeneratePlugins = async (loginPassword) => {
+  const query = `mutation { regeneratePlugins(regenerate: true){ success error }}`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPluginsRepo = async () => {
+  const query = `query { getPluginsRepo { plugins { logo, data, file } } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIInstallPlugin = async (loginPassword, pluginUrl) => {
+  const query = `mutation { installPlugin(pluginUrl: \"${pluginUrl}\"){ success error }}`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetCronTasks = async (loginPassword) => {
+  const query = `query { getCronTasks }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIRunCronTaskInstantly = async (loginPassword, id) => {
+  const query = `mutation { runCronTaskInstantly(id: ${id}) { success } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPluginsFromMastersite = async () => {
+  const query = `mutation {getPlugins { title zip description icon version author company } }`;
+  const url = `http://localhost:8080/graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APILogError = async (error) => {
+  const query = `mutation LogError($error: String!, $logType: String!) {
+    logError(error: $error, logType: $logType) { success }
+  }`;
+  const variables = {
+    error: error,
+    logType: "frontend"
+  };
+
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: query,
+      variables: variables
+    }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIClearCache = async (loginPassword, type = "all", tags = []) => {
+  const query = `mutation { clearCache(type: "${type}", tags: [${tags.map(tag => `"${tag}"`).join(', ')}]) { success message deletedCount } }`;
   const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',

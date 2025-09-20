@@ -1,113 +1,77 @@
-import React, { useEffect, useState } from 'react';
-import { notify } from '../../Utils/Notification';
-import { APICreateSystem } from '../../API/APISystem';
+import { useState } from 'react';
+import { APICreateSystem, APILogError } from '../../API/APISystem';
 
-const CreateFirstUser = () => {
-  const [email, setEmail] = useState('');
+import { notify } from '../../Utils/Notification';
+
+export default function CreateFirstUser({ setRecheck }) {
+  const [displayName, setDisplayName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [redirectToHome, setRedirectToHome] = useState(false);
-
-  const CreateUser = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password != '') {
+
+    if (!displayName || !firstName || !lastName || !email || !password) {
+      notify('Please fill in all fields', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
       const result = await APICreateSystem(email, firstName, lastName, displayName, password);
-      console.log(result);
-      if (result.data.systemCreate.success == true) {
-        setRedirectToHome(true);
+
+      if (result?.data?.systemCreate?.success) {
+        setRecheck(true);
+        notify('System created successfully!', 'success');
+      } else {
+        notify('Failed to create system', 'error');
       }
-    } else {
-      notify('Error Occured...', 'error');
+    } catch (err) {
+      console.error(err);
+      await APILogError(err.stack || String(err));
+      notify('Error occurred while creating system', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (redirectToHome == true) {
-      window.location.href = '/';
-    }
-  }, [redirectToHome]);
+  const fields = [
+    { label: 'Display Name', value: displayName, setter: setDisplayName, type: 'text' },
+    { label: 'First Name', value: firstName, setter: setFirstName, type: 'text' },
+    { label: 'Last Name', value: lastName, setter: setLastName, type: 'text' },
+    { label: 'Email', value: email, setter: setEmail, type: 'email' },
+    { label: 'Password', value: password, setter: setPassword, type: 'password' },
+  ];
 
   return (
-    <>
-      <form className="w-[400px] space-y-4 md:space-y-4 mt-4" action="#">
-        <div>
-          <input
-            type="display_name"
-            name="display_name"
-            id="display_name"
-            placeholder="Display Name"
-            autoComplete="Display Name"
-            value={displayName}
-            className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-            required=""
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        </div>
-        <div>
-          <input
-            type="first_name"
-            name="first_name"
-            id="first_name"
-            placeholder="First Name"
-            autoComplete="First Name"
-            value={firstName}
-            className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-            required=""
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </div>
-        <div>
-          <input
-            type="last_name"
-            name="last_name"
-            id="last_name"
-            placeholder="Last Name"
-            autoComplete="Last Name"
-            value={lastName}
-            className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-            required=""
-            onChange={(e) => setLastName(e.target.value)}
-          />
-        </div>
-        <div>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            placeholder="Email"
-            autoComplete="Current Email"
-            value={email}
-            className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-            required=""
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div>
-          <input
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-            autoComplete="Current Password"
-            value={password}
-            className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
-            required=""
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full cursor-pointer text-white bg-mid-teal hover:bg-lighter-teal focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-          onClick={(e) => CreateUser(e)}
-        >
-          Create System
-        </button>
-      </form>
-    </>
-  );
-};
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
+      {fields.map((f) => (
+        <input
+          key={f.label}
+          type={f.type}
+          name={f.label.toLowerCase().replace(' ', '_')}
+          placeholder={f.label}
+          value={f.value}
+          className="input w-full p-2 rounded border border-gray-300"
+          required
+          onChange={(e) => f.setter(e.target.value)}
+          disabled={isSubmitting}
+        />
+      ))}
 
-export default CreateFirstUser;
+      <button
+        type="submit"
+        className={`mt-4 w-full text-white bg-mid-teal hover:bg-lighter-teal font-medium rounded-lg text-sm px-5 py-2.5 ${
+          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Creating...' : 'Create First User'}
+      </button>
+    </form>
+  );
+}

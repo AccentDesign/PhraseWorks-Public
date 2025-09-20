@@ -6,8 +6,9 @@ import {
   APIUpdatePostStatus,
 } from '../../../../API/APIPosts';
 import DatePicker from '../../../../Utils/Datepicker';
+import PreviewPage from '../../../Utils/PreviewPage';
 
-const Status = ({ updatePost, post, setReloadPost }) => {
+const Status = ({ updatePost, post, setReloadPost, content, featuredImage, title, categories }) => {
   const { loginPassword } = useContext(APIConnectorContext);
   const [statusEdit, setStatusEdit] = useState(false);
   const [status, setStatus] = useState('draft');
@@ -94,11 +95,14 @@ const Status = ({ updatePost, post, setReloadPost }) => {
     <div className="panel">
       <h3 className="font-bold text-lg">Publish</h3>
       <hr className="my-4" />
-      <div className="flex flex-row justify-end items-center">
-        <button type="button" className="secondary-btn">
-          Preview Changes
-        </button>
-      </div>
+      <PreviewPage
+        post={post}
+        content={content}
+        featuredImage={featuredImage}
+        title={title}
+        categories={categories}
+        type="page"
+      />
       <div className="flex flex-col gap-2 items-start mt-4">
         <div className="flex flex-row items-center">
           <svg
@@ -129,7 +133,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <div className="flex flex-row items-center gap-4">
             <select
               name="status"
-              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -191,7 +195,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <div className="flex flex-row items-center gap-4">
             <select
               name="status"
-              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               value={visibility}
               onChange={(e) => setVisibility(e.target.value)}
             >
@@ -223,7 +227,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
           <p>
             <input
               type="password"
-              className="w-full bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+              className="w-full bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-44"
               placeholder="Password"
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -298,7 +302,7 @@ const Status = ({ updatePost, post, setReloadPost }) => {
         )}
         <button
           type="button"
-          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
           onClick={() => {
             updatePost();
           }}

@@ -1,65 +1,127 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Suspense, useEffect, useState } from 'react';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import Loading from '../Admin/Components/Loading';
 import Notification from '../Utils/Notification';
 import { APIGetTheme } from '../API/APISystem';
 import { ThemeComponentLoader } from '../Utils/ThemeComponentLoader';
-import Page from '../Utils/Page';
+import PostOrPageWrapper from '../Utils/PostOrPageWrapper';
+import { getWebSocket } from '../Includes/WebSocketClient';
+import { handleComponentError } from '../Utils/ErrorHandler';
 
-const MainRoutes = ({ posts }) => {
+const THEME_CACHE_KEY = 'app:theme';
+
+const MainRoutes = () => {
   const [components, setComponents] = useState(null);
-  const [theme, setTheme] = useState(null);
+  const [theme, setTheme] = useState(localStorage.getItem(THEME_CACHE_KEY) || null);
+  const [loaded, setLoaded] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+  const location = useLocation();
+
+  const loadTheme = async () => {
+    try {
+      const data = await APIGetTheme();
+      if (data.status === 200) {
+        const themeName = data.data.getTheme.name;
+        if (themeName !== theme) {
+          localStorage.setItem(THEME_CACHE_KEY, themeName);
+          setTheme(themeName);
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      await handleComponentError(err, 'MainRoutes', 'loadTheme');
+    }
+  };
 
   useEffect(() => {
-    const fetchTheme = async () => {
-      const data = await APIGetTheme();
-      if (data.status == 200) {
-        const comps = await ThemeComponentLoader(data.data.getTheme.name);
-        setTheme(data.data.getTheme.name);
+    if (!theme) {
+      loadTheme();
+      return;
+    }
+
+    const loadComponents = async () => {
+      try {
+        const comps = await ThemeComponentLoader(theme);
         setComponents(comps);
+        setLoaded(true);
+      } catch (err) {
+        await handleComponentError(err, 'MainRoutes', 'loadComponents');
+        await loadTheme();
       }
     };
-    fetchTheme();
-  }, []);
 
-  if (
-    !components ||
-    !components.HomePage ||
-    !components.Page ||
-    !components.Post ||
-    !components.Login ||
-    !components.Page404 ||
-    !components.Author ||
-    !components.Category
-  ) {
-    return <Loading />;
-  }
+    loadComponents();
+  }, [theme]);
+
+  useEffect(() => {
+    const ws = getWebSocket();
+    if (!ws) return;
+
+    const handleMessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'UPDATE_THEME') {
+          await loadTheme();
+        }
+      } catch (err) {
+        await handleComponentError(err, 'MainRoutes', 'handleWebSocketMessage');
+      }
+    };
+
+    ws.addEventListener('message', handleMessage);
+    return () => ws.removeEventListener('message', handleMessage);
+  }, [theme]);
+
+  // Fade in on route changes
+  useEffect(() => {
+    setFadeIn(false);
+    const id = setTimeout(() => setFadeIn(true), 20); // small delay for transition
+    return () => clearTimeout(id);
+  }, [location.pathname]);
+
+  // Safely extract components for JSX
+  const HomePage = components?.HomePage;
+  const PostPage = PostOrPageWrapper;
+  const AuthorPage = components?.Author;
+  const CategoryPage = components?.Category;
+  const SignUpPage = components?.SignUp;
+  const LoginPage = components?.Login;
 
   return (
-    <Suspense fallback={<Loading />}>
-      <Notification />
-      <Routes>
-        <Route exact path="/" element={<components.HomePage key="homepage" />} />
-        {posts.map((post, idx) => {
-          const isPage = post.post_type === 'page';
-          const Component = isPage ? Page : components.Post;
+    <div className="relative min-h-screen">
+      {/* Loading overlay */}
+      <div
+        className={`absolute inset-0 z-50 transition-opacity duration-500 ${
+          loaded ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        <Loading />
+      </div>
 
-          // For 'page' type, render the layout and inject PageContent
-          const element = isPage ? (
-            <Component PageContent={components.Page} post={post} theme={theme} />
-          ) : (
-            <Component post={post} />
-          );
-
-          return <Route key={idx} path={`/${post.post_name}`} element={element} />;
-        })}
-        <Route path={`/author/:id`} element={<components.Author />} />;
-        <Route path={`/category/:categoryName`} element={<components.Category />} />;
-        {/* Login route (accessible when not authenticated) */}
-        <Route path="/login" element={<components.Login key="login" />} />
-        <Route path="*" element={<components.Page404 />} />
-      </Routes>
-    </Suspense>
+      {/* Page content */}
+      <Suspense fallback={<Loading />}>
+        <div
+          className={`transition-opacity duration-500 ${
+            loaded && fadeIn ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <Notification />
+          <Routes location={location} key={location.pathname}>
+            {HomePage && <Route exact path="/" element={<HomePage />} />}
+            {PostPage && (
+              <Route
+                path="/:post_name"
+                element={<PostPage theme={theme} components={components} />}
+              />
+            )}
+            {AuthorPage && <Route path="/author/:id" element={<AuthorPage />} />}
+            {CategoryPage && <Route path="/category/:categoryName" element={<CategoryPage />} />}
+            {SignUpPage && <Route path="/sign-up" element={<SignUpPage />} />}
+            {LoginPage && <Route path="/login" element={<LoginPage />} />}
+          </Routes>
+        </div>
+      </Suspense>
+    </div>
   );
 };
 

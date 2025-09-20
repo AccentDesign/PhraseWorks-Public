@@ -1,10 +1,12 @@
 import React from 'react';
 import AtAGlance from './Dashboard/AtAGlance';
+import Activity from './Dashboard/Activity';
 
 const DashboardPageContent = () => {
   return (
-    <div className="flex flex-col md:flex-row flex-wrap items-center">
+    <div className="dashboard-page-block">
       <AtAGlance />
+      <Activity />
     </div>
   );
 };

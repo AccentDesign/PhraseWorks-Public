@@ -1,23 +1,27 @@
+import Logger from './logger.js';
+
 export default class System {
   constructor() {}
 
   static async systemCheck(sql) {
-    const tableCheck = await sql`
-          SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = 'pw_users'
-          ) AS table_exists;
-        `;
+    const tables = ['pw_users', 'pw_options'];
 
-    if (!tableCheck[0].table_exists) {
-      return { success: false, error: 'Table "users" does not exist' };
+    for (const table of tables) {
+      const result = await sql`SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = ${table}
+        ) AS table_exists;`;
+
+      if (!result[0].table_exists) {
+        return { success: false, error: `Table "${table}" does not exist` };
+      }
     }
 
     return { success: true };
   }
 
-  static async createDatabase(sql, email, first_name, last_name, display_name, password) {
+  static async createDatabase(sql, email, first_name, last_name, display_name, password, env) {
     const tableCheck = await sql`
           SELECT EXISTS (
             SELECT FROM information_schema.tables 
@@ -26,8 +30,8 @@ export default class System {
           ) AS table_exists;
         `;
     if (!tableCheck[0].table_exists) {
-      const created = await System.createTables(sql);
-      if (created == 11) {
+      const created = await System.createTables(sql, env);
+      if (created == 12) {
         const userLogin = email.split('@')[0];
         const userNicename = userLogin
           .replace(/_/g, ' ')
@@ -63,22 +67,105 @@ export default class System {
             );
           `;
 
-          await sql`
-            INSERT INTO pw_options ("option_id", "option_name", "option_value") 
-            OVERRIDING SYSTEM VALUE VALUES 
-            (2, 'media_settings', '[{"title":"Banner","slug":"banner","width":2400,"height":1600},{"title":"Thumbnail","slug":"thumbnail","width":150,"height":150},{"title":"Medium","slug":"medium","width":300,"height":200},{"title":"Large","slug":"large","width":1024,"height":683}]'),
-            (4, 'site_theme', '1'),
-            (5, 'themes', '[{"id":1,"name":"Theme2025","location":"/Content/Theme2025"}]'),
-            (6, 'site_title', 'Test'),
-            (7, 'site_tagline', NULL),
-            (9, 'admin_email', 'test@example.com'),
-            (8, 'site_address', 'http://localhost:8787'),
-            (10, 'new_user_role', 'subscriber'),
-            (11, 'default_post_category', NULL),
-            (14, 'show_at_most', '10'),
-            (15, 'search_engine_visibility', 'true');
-            (16, 'menus', '[]');
-          `;
+          await sql`INSERT INTO pw_usermeta (user_id, meta_key, meta_value) VALUES (1, 'pw_user_role',	1)`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'media_settings',
+            '[{"title":"Banner","slug":"banner","width":2400,"height":1600},{"title":"Thumbnail","slug":"thumbnail","width":150,"height":150},{"title":"Medium","slug":"medium","width":300,"height":200},{"title":"Large","slug":"large","width":1024,"height":683}]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'site_theme',
+            '1'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'themes',
+            '[{"id":1,"name":"Theme2025","location":"/Content/Theme2025"}]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'site_title',
+            'Test'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'site_tagline',
+            NULL
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'admin_email',
+            'test@example.com'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'site_address',
+            'http://localhost:8787'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'new_user_role',
+            'subscriber'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'default_post_category',
+            NULL
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'show_at_most',
+            '10'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'search_engine_visibility',
+            'true'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'menus',
+            '[{"name":"Test","menuData":"[]"}]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'email_settings',
+            '{"SMTP_USERNAME":"","SMTP_PASSWORD":"","SMTP_AUTHTYPE":"login","SMTP_HOST":"","SMTP_PORT":"587","SMTP_SECURE":false}'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'custom_field_groups',
+            '[]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'custom_posts',
+            '[]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            'plugins',
+            '[]'
+          );`;
+
+          await sql`INSERT INTO pw_options (option_name, option_value) VALUES (
+            '_cron_tasks',
+            ${JSON.stringify([
+              {
+                id: 1,
+                name: 'Publish Scheduled Posts',
+                cron_expression: '*/5 * * * *',
+                run_once: false,
+                last_run_at: new Date().toISOString(),
+                enabled: true,
+                function_name: 'publishScheduledPosts',
+              },
+            ])}
+          );`;
+
+          await sql`ALTER TABLE pw_postmeta ADD CONSTRAINT unique_postid_metakey UNIQUE (post_id, meta_key);`;
+          await sql`ALTER TABLE pw_options ADD CONSTRAINT unique_option_name UNIQUE (option_name);`;
         });
         if (result.length > 0) {
           return {
@@ -104,7 +191,7 @@ export default class System {
     }
   }
 
-  static async createTables(sql) {
+  static async createTables(sql, env) {
     let created = 0;
     const tables = [
       'pw_commentmeta',
@@ -134,40 +221,40 @@ export default class System {
 
         switch (table) {
           case 'pw_commentmeta':
-            createTableSQL = await System.getSqlForTableCommentMeta(table);
+            createTableSQL = await System.getSqlForTableCommentMeta(table, env);
             break;
           case 'pw_comments':
-            createTableSQL = await System.getSqlForTableComments(table);
+            createTableSQL = await System.getSqlForTableComments(table, env);
             break;
           case 'pw_options':
-            createTableSQL = await System.getSqlForTableOptions(table);
+            createTableSQL = await System.getSqlForTableOptions(table, env);
             break;
           case 'pw_postmeta':
-            createTableSQL = await System.getSqlForTablePostmeta(table);
+            createTableSQL = await System.getSqlForTablePostmeta(table, env);
             break;
           case 'pw_posts':
-            createTableSQL = await System.getSqlForTablePosts(table);
+            createTableSQL = await System.getSqlForTablePosts(table, env);
             break;
           case 'pw_term_relationships':
-            createTableSQL = await System.getSqlForTableTermRelationships(table);
+            createTableSQL = await System.getSqlForTableTermRelationships(table, env);
             break;
           case 'pw_term_taxonomy':
-            createTableSQL = await System.getSqlForTableTermTaxonomy(table);
+            createTableSQL = await System.getSqlForTableTermTaxonomy(table, env);
             break;
           case 'pw_termmeta':
-            createTableSQL = await System.getSqlForTableTermMeta(table);
+            createTableSQL = await System.getSqlForTableTermMeta(table, env);
             break;
           case 'pw_terms':
-            createTableSQL = await System.getSqlForTableTerms(table);
+            createTableSQL = await System.getSqlForTableTerms(table, env);
             break;
           case 'pw_usermeta':
-            createTableSQL = await System.getSqlForTableUserMeta(table);
+            createTableSQL = await System.getSqlForTableUserMeta(table, env);
             break;
           case 'pw_users':
-            createTableSQL = await System.getSqlForTableUsers(table);
+            createTableSQL = await System.getSqlForTableUsers(table, env);
             break;
           case 'pw_page_templates':
-            createTableSQL = await System.getSqlForTablePageTemplates(table);
+            createTableSQL = await System.getSqlForTablePageTemplates(table, env);
             break;
         }
 
@@ -199,17 +286,11 @@ export default class System {
         }
       }
     }
-    await sql`
-      INSERT INTO pw_options (option_name, option_value)
-      VALUES (
-        'media_settings',
-        '[{"title":"Banner","slug":"banner","width":2400,"height":1600},{"title":"Thumbnail","slug":"thumbnail","width":150,"height":150},{"title":"Medium","slug":"medium","width":300,"height":200},{"title":"Large","slug":"large","width":1024,"height":683}]'
-      );
-    `;
+
     return created;
   }
 
-  static async getSqlForTableCommentMeta(table) {
+  static async getSqlForTableCommentMeta(table, env) {
     return `
     DROP TABLE IF EXISTS "public"."${table}";
     CREATE TABLE "public"."${table}" (
@@ -224,13 +305,13 @@ export default class System {
       "meta_key" varchar(255) COLLATE "pg_catalog"."default",
       "meta_value" text COLLATE "pg_catalog"."default"
     );
-    ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+    ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
     ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_commentmeta_pkey" PRIMARY KEY ("meta_id");
     SELECT setval('"public"."pw_commentmeta_meta_id_seq"', 1, false);
   `;
   }
 
-  static async getSqlForTableComments(table) {
+  static async getSqlForTableComments(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -254,33 +335,26 @@ export default class System {
         "comment_parent" int4,
         "user_id" int4
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_comments_pkey" PRIMARY KEY ("comment_id");
       SELECT setval('"public"."pw_comments_comment_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableOptions(table) {
+  static async getSqlForTableOptions(table, env) {
     return `
-      DROP TABLE IF EXISTS "public"."${table}";
-      CREATE TABLE "public"."${table}" (
-        "option_id" int4 NOT NULL GENERATED ALWAYS AS IDENTITY (
-          INCREMENT 1
-          MINVALUE 1
-          MAXVALUE 2147483647
-          START 1
-          CACHE 1
-        ),
-        "option_name" varchar(255) COLLATE "pg_catalog"."default",
-        "option_value" text COLLATE "pg_catalog"."default"
+      DROP TABLE IF EXISTS "public"."pw_options";
+
+      CREATE TABLE "public"."pw_options" (
+        "option_id" int4 NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        "option_name" varchar(255),
+        "option_value" text
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
-      ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_options_pkey" PRIMARY KEY ("option_id");
-      SELECT setval('"public"."pw_options_option_id_seq"', 1, false);
+      ALTER TABLE "public"."pw_options" OWNER TO ${env.DATABASE_USER};
     `;
   }
 
-  static async getSqlForTablePostmeta(table) {
+  static async getSqlForTablePostmeta(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -295,13 +369,13 @@ export default class System {
         "meta_key" varchar(255) COLLATE "pg_catalog"."default",
         "meta_value" text COLLATE "pg_catalog"."default"
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_postmeta_pkey" PRIMARY KEY ("meta_id");
       SELECT setval('"public"."pw_postmeta_meta_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTablePosts(table) {
+  static async getSqlForTablePosts(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -324,19 +398,18 @@ export default class System {
         "post_modified_gmt" date,
         "post_parent" int4,
         "guid" varchar(255) COLLATE "pg_catalog"."default",
-        "menu_order" int4,
         "post_type" varchar(20) COLLATE "pg_catalog"."default",
         "post_mime_type" varchar(100) COLLATE "pg_catalog"."default",
         "post_author" int4,
         "menu_order" int4
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_posts_pkey" PRIMARY KEY ("id");
       SELECT setval('"public"."pw_posts_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableTermRelationships(table) {
+  static async getSqlForTableTermRelationships(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -344,11 +417,11 @@ export default class System {
         "term_taxonomy_id" int4,
         "term_order" int4
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
     `;
   }
 
-  static async getSqlForTableTermTaxonomy(table) {
+  static async getSqlForTableTermTaxonomy(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -365,13 +438,13 @@ export default class System {
         "parent" int4,
         "count" int4
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_term_taxonomy_pkey" PRIMARY KEY ("term_taxonomy_id");
       SELECT setval('"public"."pw_term_taxonomy_term_taxonomy_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableTermMeta(table) {
+  static async getSqlForTableTermMeta(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -386,13 +459,13 @@ export default class System {
         "meta_key" varchar(255) COLLATE "pg_catalog"."default",
         "meta_value" text COLLATE "pg_catalog"."default"
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_termmeta_pkey" PRIMARY KEY ("meta_id");
       SELECT setval('"public"."pw_termmeta_meta_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableTerms(table) {
+  static async getSqlForTableTerms(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -407,13 +480,13 @@ export default class System {
         "slug" varchar(200) COLLATE "pg_catalog"."default",
         "term_group" int4
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_terms_pkey" PRIMARY KEY ("term_id");
       SELECT setval('"public"."pw_terms_term_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableUserMeta(table) {
+  static async getSqlForTableUserMeta(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -428,13 +501,13 @@ export default class System {
         "meta_key" varchar(255) COLLATE "pg_catalog"."default",
         "meta_value" text COLLATE "pg_catalog"."default"
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_usermeta_pkey" PRIMARY KEY ("umeta_id");
       SELECT setval('"public"."pw_usermeta_umeta_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTableUsers(table) {
+  static async getSqlForTableUsers(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
       CREATE TABLE "public"."${table}" (
@@ -457,13 +530,13 @@ export default class System {
         "first_name" varchar(255) COLLATE "pg_catalog"."default",
         "last_name" varchar(255) COLLATE "pg_catalog"."default"
       );
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_users_pkey" PRIMARY KEY ("id");
       SELECT setval('"public"."pw_users_id_seq"', 1, false);
     `;
   }
 
-  static async getSqlForTablePageTemplates(table) {
+  static async getSqlForTablePageTemplates(table, env) {
     return `
       DROP TABLE IF EXISTS "public"."${table}";
 
@@ -479,11 +552,15 @@ export default class System {
         "file_name" varchar(255) COLLATE "pg_catalog"."default"
       );
 
-      ALTER TABLE "public"."${table}" OWNER TO "phrase_works_user";
+      ALTER TABLE "public"."${table}" OWNER TO ${env.DATABASE_USER};
 
       ALTER TABLE "public"."${table}" ADD CONSTRAINT "pw_page_templates_pkey" PRIMARY KEY ("id");
 
-      SELECT setval('"public"."${table}"', 1, false);
+      SELECT setval('"public".pw_page_templates_id_seq', 1, false);
     `;
+  }
+
+  static async writeLogData(data, type) {
+    await Logger.writeLogData(data, type);
   }
 }

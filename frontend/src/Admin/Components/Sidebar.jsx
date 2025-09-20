@@ -1,345 +1,232 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState, Fragment } from 'react';
 import { UserContext } from '../../Contexts/UserContext';
-import { useLocation } from 'react-router-dom';
-import { MdDashboard } from 'react-icons/md';
+import { useLocation, Link } from 'react-router-dom';
+import { APIGetAdminMenus } from '../../API/APISystem';
+import { APIConnectorContext } from '../../Contexts/APIConnectorContext';
+import SidebarItem from './SidebarItem';
+import { APIGetCustomPosts } from '../../API/APICustomPosts';
+import { notify } from '../../Utils/Notification';
+import { getWebSocket } from '../../Includes/WebSocketClient';
+import { createSafeSvgMarkup } from '../../Utils/sanitizeHtml';
+import { handleComponentError } from '../../Utils/ErrorHandler';
 
-import { FaPenAlt } from 'react-icons/fa';
-import { IoIosDocument } from 'react-icons/io';
-import { MdPermMedia } from 'react-icons/md';
-import { FaUser } from 'react-icons/fa';
-import { FaTools } from 'react-icons/fa';
-import { FaBrush } from 'react-icons/fa6';
-
-import { Link } from 'react-router-dom';
+const ADMIN_SIDEBAR_CACHE_KEY = 'app:adminSidebar';
 
 const Sidebar = () => {
   const { user } = useContext(UserContext);
+  const { loginPassword } = useContext(APIConnectorContext);
   const location = useLocation();
   const path = location.pathname;
-  const isActive = (matchPath) => {
-    return path === matchPath || path.startsWith(matchPath + '/');
+  const [menuData, setMenuData] = useState([]);
+
+  const IconFromString = ({ svgString }) => (
+    <span className="sidebar-icon" dangerouslySetInnerHTML={createSafeSvgMarkup(svgString)} />
+  );
+
+  const isActive = (matchPath) => path === matchPath || path.startsWith(matchPath + '/');
+
+  const fetchData = async (isMounted = true) => {
+    try {
+      const [menuResp, postsResp] = await Promise.all([
+        APIGetAdminMenus(loginPassword),
+        APIGetCustomPosts(loginPassword),
+      ]);
+
+      if (menuResp.status !== 200 || postsResp.status !== 200) {
+        notify('Failed to fetch admin data.', 'error');
+        return [];
+      }
+
+      // Check for null data before accessing properties
+      if (!menuResp.data || !menuResp.data.getAdminMenus) {
+        await handleComponentError(
+          new Error('getAdminMenus data is null or undefined'),
+          'Sidebar',
+          'fetchAdminData',
+          { silent: true }
+        );
+        notify('Admin menus data is not available.', 'warning');
+        return [];
+      }
+
+      if (!postsResp.data || !postsResp.data.getCustomPosts) {
+        await handleComponentError(
+          new Error('getCustomPosts data is null or undefined'),
+          'Sidebar',
+          'fetchAdminData',
+          { silent: true }
+        );
+        notify('Custom posts data is not available.', 'warning');
+        return [];
+      }
+
+      const menu = JSON.parse(menuResp.data.getAdminMenus);
+      const customPosts = JSON.parse(postsResp.data.getCustomPosts);
+
+      const customPostMenus = customPosts.map((post) => {
+        const slug = post.name
+          .replace(/[^\w\s]/gi, '')
+          .replace(/\s+/g, '_')
+          .toLowerCase();
+
+        return {
+          id: `customPost_${slug}`,
+          name: post.name,
+          slug: `/admin/custom/${slug}`,
+          icon: `<svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 512 512" class="text-gray-400 group-hover:text-white" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M497.94 74.17l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.75 18.75-49.15 0-67.91zm-246.8-20.53c-15.62-15.62-40.94-15.62-56.56 0L75.8 172.43c-6.25 6.25-6.25 16.38 0 22.62l22.63 22.63c6.25 6.25 16.38 6.25 22.63 0l101.82-101.82 22.63 22.62L93.95 290.03A327.038 327.038 0 0 0 .17 485.11l-.03.23c-1.7 15.28 11.21 28.2 26.49 26.51a327.02 327.02 0 0 0 195.34-93.8l196.79-196.79-82.77-82.77-84.85-84.85z"></path></svg>`,
+          order: 1,
+          children: [
+            {
+              id: `customPost_${slug}_dashboard`,
+              name: `${post.name} Dashboard`,
+              slug: `/admin/custom/${slug}`,
+              icon: null,
+              order: 1,
+              children: [],
+            },
+            {
+              id: `customPost_${slug}_new`,
+              name: `Add New ${post.name}`,
+              slug: `/admin/custom/${slug}/new`,
+              icon: null,
+              order: 2,
+              children: [],
+            },
+            {
+              id: `customPost_${slug}_edit`,
+              name: `Edit ${post.name}`,
+              slug: `/admin/custom/${slug}/edit/:id`,
+              icon: null,
+              order: 3,
+              children: [],
+            },
+          ],
+        };
+      });
+
+      const updatedMenu = menu.flatMap((section) =>
+        section.id === 'posts' ? [section, ...customPostMenus] : [section],
+      );
+
+      if (isMounted) {
+        setMenuData(updatedMenu);
+        localStorage.setItem(ADMIN_SIDEBAR_CACHE_KEY, JSON.stringify(updatedMenu));
+      }
+      return updatedMenu;
+    } catch (err) {
+      await handleComponentError(err, 'Sidebar', 'fetchData', {
+        additionalData: { loginPassword: !!loginPassword }
+      });
+      notify('Error fetching menu data.', 'error');
+      return [];
+    }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      const cached = localStorage.getItem(ADMIN_SIDEBAR_CACHE_KEY);
+      if (cached) {
+        if (isMounted) setMenuData(JSON.parse(cached));
+      } else {
+        const data = await fetchData(isMounted);
+        if (isMounted) setMenuData(data);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      if (!menuData || menuData.length === 0) {
+        await fetchData(isMounted);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [menuData]);
+
+  useEffect(() => {
+    const ws = getWebSocket();
+    if (!ws) return;
+
+    const handleMessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'UPDATE_ADMIN_SIDEBAR') {
+          // WebSocket event received, refreshing admin sidebar menu
+          await fetchData();
+        }
+      } catch (err) {
+        await handleComponentError(err, 'Sidebar', 'handleWebSocketMessage');
+      }
+    };
+
+    ws.addEventListener('message', handleMessage);
+    return () => ws.removeEventListener('message', handleMessage);
+  }, [loginPassword]);
+
   return (
-    <aside
-      id="default-sidebar"
-      className="fixed top-[40px] left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
-      aria-label="Sidenav"
-    >
-      <div className="overflow-y-auto py-5 px-3 h-full border-r border-gray-200 bg-gray-800 text-white">
-        <ul className="space-y-2">
+    <aside id="default-sidebar" className="sidebar" aria-label="Sidenav">
+      <div className="sidebar-content">
+        <ul key={JSON.stringify(menuData)} className="space-y-2">
+          {[...menuData]
+            .sort((a, b) => a.order - b.order)
+            .map((item, idx) => (
+              <Fragment key={idx}>
+                {item.id === 'dashboard' ? (
+                  <li
+                    className={`sidebar-content-li ${
+                      isActive('/admin') &&
+                      (location.pathname === '/admin' || location.pathname === '/admin/')
+                        ? 'border-l-4 border-blue-500 bg-gray-700'
+                        : ''
+                    }`}
+                  >
+                    <Link to="/admin/" className="sidebar-content-li-link group">
+                      <IconFromString svgString={item.icon} />
+                      <span className="ml-3">Dashboard</span>
+                    </Link>
+                  </li>
+                ) : (
+                  <SidebarItem
+                    key={item.id + '-' + JSON.stringify(item.children.map((c) => c.id))}
+                    item={item}
+                    user={user}
+                    path={path}
+                  />
+                )}
+              </Fragment>
+            ))}
+        </ul>
+
+        <ul className="pt-5 mt-5 space-y-2 border-t border-gray-200">
           <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              path === '/admin/' || path === '/admin'
-                ? 'border-l-4 border-blue-500 bg-gray-700'
-                : ''
+            className={`sidebar-content-li ${
+              isActive('/admin/docs') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
             }`}
           >
             <Link
-              to="/admin/"
-              className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-            >
-              <MdDashboard className="text-gray-400 group-hover:text-white" />
-
-              <span className="ml-3">Dashboard</span>
-            </Link>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/posts') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/posts"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <FaPenAlt className="text-gray-400 group-hover:text-white" />
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Posts</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[65px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/posts"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      All Posts
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/posts/new"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Add Post
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/posts/categories"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Categories
-                    </Link>
-                  </li>
-
-                  <li>
-                    <Link
-                      to="/admin/posts/tags"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Tags
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/media') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/media"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <MdPermMedia className="text-gray-400 group-hover:text-white" />
-
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Media</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[115px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/media"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Media Library
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/media/settings"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Media Settings
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/pages') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/pages"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <IoIosDocument className="text-gray-400 group-hover:text-white" />
-
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Pages</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[160px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/pages"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      All Pages
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/pages/new"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Add Page
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/pages/page_templates"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Page Templates
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/users') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/users"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <FaUser className="text-gray-400 group-hover:text-white" />
-
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Users</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[212px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/users"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      All Users
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/users/new"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Add User
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to={`/admin/users/edit/${user.id}`}
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Profile
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/appearance') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/appearance"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <FaBrush className="text-gray-400 group-hover:text-white" />
-
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Appearance</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[260px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/appearance"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Themes
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/appearance/menus"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Menus
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-          <li
-            className={`w-full relative group flex flex-row items-center cursor-pointer ${
-              isActive('/admin/settings') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
-            }`}
-          >
-            <div className="w-full relative group flex flex-row items-center cursor-pointer">
-              <Link
-                to="/admin/settings"
-                className="w-full flex items-center p-2 text-base font-normal rounded-lg text-white hover:bg-gray-700 group"
-              >
-                <FaTools className="text-gray-400 group-hover:text-white" />
-
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">Settings</span>
-              </Link>
-              <div
-                className="fixed z-50 top-[308px] left-[200px] z-50 w-56 text-base list-none bg-gray-800 text-white rounded divide-y divide-gray-100 shadow invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                id="dropdown"
-              >
-                <ul className="py-1 font-light text-gray-400" aria-labelledby="dropdown">
-                  <li>
-                    <Link
-                      to="/admin/settings"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      General
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/settings/writing"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Writing
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/settings/reading"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Reading
-                    </Link>
-                  </li>
-
-                  <li>
-                    <Link
-                      to="/admin/settings/email"
-                      className="block py-2 px-4 text-sm hover:bg-gray-600 text-gray-400 hover:text-white text-left"
-                    >
-                      Email
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </li>
-        </ul>
-
-        <ul className="pt-5 mt-5 space-y-2 border-t border-gray-200 dark:border-gray-700">
-          <li>
-            <a
-              href="#"
-              className="flex items-center p-2 text-base font-normal rounded-lg transition duration-75 hover:bg-gray-700 text-white group"
+              to="/admin/docs"
+              className="sidebar-content-li-link group flex items-center p-2 text-base font-normal rounded-lg transition duration-75 hover:bg-gray-700 text-white group"
             >
               <svg
                 aria-hidden="true"
                 className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
                 fill="currentColor"
                 viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
                 <path
@@ -349,19 +236,22 @@ const Sidebar = () => {
                 ></path>
               </svg>
               <span className="ml-3">Docs</span>
-            </a>
+            </Link>
           </li>
-          <li>
-            <a
-              href="#"
-              className="flex items-center p-2 text-base font-normal rounded-lg transition duration-75 hover:bg-gray-700 text-white group"
+          <li
+            className={`sidebar-content-li ${
+              isActive('/admin/help') ? 'border-l-4 border-blue-500 bg-gray-700' : ''
+            }`}
+          >
+            <Link
+              to="/admin/help"
+              className="sidebar-content-li-link group flex items-center p-2 text-base font-normal rounded-lg transition duration-75 hover:bg-gray-700 text-white group"
             >
               <svg
                 aria-hidden="true"
                 className="flex-shrink-0 w-6 h-6 transition duration-75 text-gray-400 group-hover:text-white"
                 fill="currentColor"
                 viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   fillRule="evenodd"
@@ -370,7 +260,7 @@ const Sidebar = () => {
                 ></path>
               </svg>
               <span className="ml-3">Help</span>
-            </a>
+            </Link>
           </li>
         </ul>
       </div>

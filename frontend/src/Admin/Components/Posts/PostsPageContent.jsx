@@ -7,12 +7,15 @@ import {
   APIGetPostsByAuthor,
   APIGetPostsByStatus,
   APIUpdatePostStatus,
+  APIDeletePost,
+  APIGetPostTableFields,
 } from '../../../API/APIPosts';
 import { APIConnectorContext } from '../../../Contexts/APIConnectorContext';
 import { UserContext } from '../../../Contexts/UserContext';
 import ActionsButton from './Dashboard/ActionsButton';
 import ListView from './Dashboard/ListView';
 import Pagination from './Dashboard/Pagination';
+import { handleComponentError } from '../../../Utils/ErrorHandler';
 
 const PostsPageContent = () => {
   const { loginPassword } = useContext(APIConnectorContext);
@@ -21,6 +24,7 @@ const PostsPageContent = () => {
   const [allPosts, setAllPosts] = useState([]);
   const [totalPosts, setTotalPosts] = useState(0);
   const [reloadPosts, setReloadPosts] = useState(false);
+  const [postTableFields, setPostTableFields] = useState([]);
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
@@ -102,30 +106,51 @@ const PostsPageContent = () => {
       }
     }
   };
-
-  const fetchData = async () => {
-    if (filter == 'all') {
-      const data = await APIGetPosts(loginPassword, page, perPage, 'post');
-      if (data.status == 200) {
-        setPosts(data.data.getPosts.posts);
-        setTotalPosts(data.data.getPosts.total);
-      }
-    } else if (filter == 'mine') {
-      const data = await APIGetPostsByAuthor(loginPassword, page, perPage, 'post', user.id);
-      if (data.status == 200) {
-        setPosts(data.data.getPostsByAuthor.posts);
-        setTotalPosts(data.data.getPostsByAuthor.total);
-      }
-    } else {
-      const data = await APIGetPostsByStatus(loginPassword, page, perPage, 'post', filter);
-      if (data.status == 200) {
-        setPosts(data.data.getPostsByStatus.posts);
-        setTotalPosts(data.data.getPostsByStatus.total);
+  const permanentDelete = async (id) => {
+    const data = await APIDeletePost(loginPassword, id);
+    if (data.status == 200) {
+      if (data.data.deletePost.success) {
+        setReloadPosts(true);
       }
     }
-    const allData = await APIAllGetPosts(loginPassword, 1, 2147483647, 'post');
-    if (allData.status == 200) {
-      setAllPosts(allData.data.getPosts.posts);
+  };
+
+  const fetchData = async () => {
+    try {
+      if (filter == 'all') {
+        const data = await APIGetPosts(loginPassword, page, perPage, 'post');
+        if (data.status == 200 && data.data?.getPosts) {
+          setPosts(data.data.getPosts.posts || []);
+          setTotalPosts(data.data.getPosts.total || 0);
+        }
+      } else if (filter == 'mine') {
+        const data = await APIGetPostsByAuthor(page, perPage, 'post', user.id);
+        if (data.status == 200 && data.data?.getPostsByAuthor) {
+          setPosts(data.data.getPostsByAuthor.posts || []);
+        }
+      } else {
+        const data = await APIGetPostsByStatus(loginPassword, page, perPage, 'post', filter);
+        if (data.status == 200 && data.data?.getPostsByStatus) {
+          setPosts(data.data.getPostsByStatus.posts || []);
+        }
+      }
+
+      const allData = await APIAllGetPosts(loginPassword, 1, 2147483647, 'post');
+      if (allData.status == 200 && allData.data?.getPosts) {
+        setAllPosts(allData.data.getPosts.posts || []);
+      }
+
+      const fieldsData = await APIGetPostTableFields(loginPassword, 'post');
+      if (fieldsData.status == 200 && fieldsData.data?.getPostTableFields) {
+        setPostTableFields(fieldsData.data.getPostTableFields.fields || []);
+      } else {
+        console.warn('getPostTableFields data is null or undefined');
+        setPostTableFields([]);
+      }
+    } catch (error) {
+      await handleComponentError(error, 'PostsPageContent', 'fetchData', {
+        additionalData: { filter, page, perPage, userId: user?.id }
+      });
     }
   };
 
@@ -143,6 +168,7 @@ const PostsPageContent = () => {
       }
     }
   }, [reloadPosts]);
+  
   return (
     <>
       <div className="w-full">
@@ -170,8 +196,10 @@ const PostsPageContent = () => {
             binPost={binPost}
             publishPost={publishPost}
             draftPost={draftPost}
+            permanentDelete={permanentDelete}
             allSelected={allSelected}
             toggleAllCheckboxes={toggleAllCheckboxes}
+            postTableFields={postTableFields}
           />
           <Pagination totalPosts={totalPosts} page={page} perPage={perPage} setPage={setPage} />
         </div>

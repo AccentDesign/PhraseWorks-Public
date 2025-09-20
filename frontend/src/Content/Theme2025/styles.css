@@ -1,0 +1,43 @@
+@reference "../../index.css";
+
+.content {
+  @apply !bg-[#f5efeb];
+}
+
+.header {
+  @apply bg-menu-primary;
+}
+.header-link {
+  @apply flex no-underline text-menu-text py-[1em] px-[2em] transition-colors duration-150 ease-linear hover:bg-menu-hover;
+}
+
+.active-link {
+  @apply border-b-2 border-b-menu-text bg-menu-accent hover:bg-menu-accent;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  @apply bg-menu-hover;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-scrollbar-thumb;
+  border-radius: 9999px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-scrollbar-hover;
+}
+
+.sign-in-form input:-webkit-autofill,
+.sign-in-form input:-webkit-autofill:focus,
+.sign-in-form input:-webkit-autofill:hover,
+.sign-in-form input:-internal-autofill-selected {
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important; /* force white background */
+  -webkit-text-fill-color: #6b7280 !important; /* Tailwind's gray-500 */
+  caret-color: #6b7280 !important;
+  transition: background-color 9999s ease-in-out 0s !important; /* hack to suppress yellow flash */
+}

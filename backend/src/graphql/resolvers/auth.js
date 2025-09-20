@@ -1,44 +1,86 @@
 import jwt from 'jsonwebtoken';
-import User from '../../models/user';
+import User from '../../models/user.js';
 import WordpressHash from 'wordpress-hash-node';
 
 export default {
-  login: async function ({ email, password }, { connection, secret }) {
-    const user = await User.find({ param: 'user_email', value: email }, connection);
-    if (!user) {
-      throw Object.assign(new Error('User not found.'), { code: 401 });
-    }
+  Query: {
+    login: async function (_, { email, password }, { connection, secret }) {
+      const user = await User.find({ param: 'user_email', value: email }, connection);
+      if (!user) {
+        throw Object.assign(new Error('User not found.'), { code: 401 });
+      }
 
-    const isEqual = WordpressHash.CheckPassword(password, user.user_pass);
-    if (!isEqual) {
-      throw Object.assign(new Error('Password is incorrect.'), { code: 401 });
-    }
+      const isEqual = WordpressHash.CheckPassword(password, user.user_pass);
+      if (!isEqual) {
+        throw Object.assign(new Error('Password is incorrect.'), { code: 401 });
+      }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, secret, { expiresIn: '1h' });
-    const refreshToken = jwt.sign({ user }, secret, { expiresIn: '1d' });
+      const token = jwt.sign({ userId: user.id, email: user.email }, secret, { expiresIn: '1h' });
+      const refreshToken = jwt.sign({ user }, secret, { expiresIn: '1d' });
 
-    return {
-      token,
-      refreshToken,
-      userId: user.id,
-      user: [extractUserFields(user)],
-    };
-  },
+      return {
+        token,
+        refreshToken,
+        userId: user.id,
+        user: [extractUserFields(user)],
+      };
+    },
 
-  refresh: async function ({ refreshToken }, { connection, secret }) {
-    const decoded = jwt.verify(refreshToken, secret);
-    const token = jwt.sign({ userId: decoded.user.id, email: decoded.user.email }, secret, {
-      expiresIn: '1h',
-    });
-    const newRefreshToken = jwt.sign({ user: decoded.user }, secret, { expiresIn: '1d' });
+    refresh: async function (_, { refreshToken, userId }, { connection, secret }) {
+      try {
+        const decoded = jwt.verify(refreshToken, secret);
 
-    const user = await User.findById(decoded.user.id, connection);
-    return {
-      token,
-      refreshToken: newRefreshToken,
-      userId: user.id,
-      user: [extractUserFields(user)],
-    };
+        if (!decoded?.user?.id) {
+          throw new Error('Invalid token payload.');
+        }
+
+        const user = await User.findById(decoded.user.id, connection);
+        if (!user) {
+          throw new Error('User not found.');
+        }
+
+        const token = jwt.sign({ userId: user.id, email: user.email }, secret, {
+          expiresIn: '1h',
+        });
+
+        const newRefreshToken = jwt.sign({ user: { id: user.id, email: user.email } }, secret, {
+          expiresIn: '7d',
+        });
+
+        const refreshTokenExpiry = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
+
+        return {
+          token,
+          refreshToken: newRefreshToken,
+          refreshTokenExpiry,
+          userId: user.id,
+          user: [extractUserFields(user)],
+        };
+      } catch (error) {
+        const user = await User.findById(userId, connection);
+        if (!user) {
+          throw new Error('User not found.');
+        }
+
+        const token = jwt.sign({ userId: user.id, email: user.email }, secret, {
+          expiresIn: '1h',
+        });
+
+        const newRefreshToken = jwt.sign({ user: { id: user.id, email: user.email } }, secret, {
+          expiresIn: '7d',
+        });
+
+        const refreshTokenExpiry = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
+
+        return {
+          token,
+          refreshToken: newRefreshToken,
+          refreshTokenExpiry,
+          userId: user.id,
+          user: [extractUserFields(user)],
+        };
+      }
+    },
   },
 };
 
@@ -53,5 +95,6 @@ function extractUserFields(user) {
     display_name: user.display_name,
     first_name: user.first_name,
     last_name: user.last_name,
+    user_role: user.user_role,
   };
 }

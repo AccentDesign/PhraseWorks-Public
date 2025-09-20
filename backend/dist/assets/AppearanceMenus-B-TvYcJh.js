@@ -1,1 +1,0 @@
-import{j as e}from"./index-Cr2NTSyD.js";import{V as r,H as s,P as n,F as a}from"./PageContent-D_oMJrmr.js";import"./index-NHjc60Ok.js";const t=()=>e.jsx("div",{children:"AppearanceMenus"}),x=()=>e.jsxs(r,{children:[e.jsx(s,{}),e.jsx(n,{children:e.jsx(t,{})}),e.jsx(a,{})]});export{x as default};

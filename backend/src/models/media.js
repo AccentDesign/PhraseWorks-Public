@@ -1,10 +1,41 @@
-import Meta from './meta';
-import User from './user';
-import { PhotonImage, SamplingFilter, resize, crop } from '@cf-wasm/photon';
+import { S3Client } from '@aws-sdk/client-s3';
+import { getAllItems } from '../utils/r2.js';
+import Meta from './meta.js';
+import User from './user.js';
+// import { PhotonImage, SamplingFilter, resize, crop } from '@cf-wasm/photon';
+import { promises as fs } from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+import { doAction } from '../utils/actionBus.js';
+import System from './system.js';
+
+let getMimeType;
+try {
+  const mime = await import('mime');
+  getMimeType = mime.getType || (mime.default && mime.default.getType);
+  if (!getMimeType) throw new Error('mime.getType not found');
+} catch (e) {
+  await System.writeLogData(e.stack || String(e), 'backend');
+  console.warn(
+    'mime package not installed or failed to load, falling back to manual MIME types:',
+    e.message,
+  );
+}
+
+const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+async function ensureUploadsDir() {
+  try {
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+  } catch (err) {
+    await System.writeLogData(err.stack || String(err), 'backend');
+    console.error('Failed to create uploads directory:', err);
+    throw new Error('Failed to initialize uploads directory');
+  }
+}
 
 export default class Media {
   constructor() {}
-  static async uploadFile(key, file, sql, userId, width, height, env) {
+  static async uploadFile(key, file, connection, userId, width, height, env, url) {
     const slug = key
       .split('.')
       .slice(0, -1)
@@ -19,7 +50,9 @@ export default class Media {
       .join('.')
       .replace(/\b\w/g, (l) => l.toUpperCase());
     const mimeType = file.type;
-    const insert = await sql`
+    const guid = `${key}`;
+
+    const insert = await connection`
     INSERT INTO pw_posts (
         post_author,
         post_date,
@@ -46,44 +79,62 @@ export default class Media {
         NOW(),
         NOW(),
         'attachment',
-        ${`https://localhost/${key}`},
+        ${guid},
         ${mimeType}
     )
     RETURNING id;
-    `;
+  `;
     const postId = insert[0]?.id;
 
-    const settingsJSON = await Media.getSettings(sql);
+    const settingsJSON = await Media.getSettings(connection);
     const settings = JSON.parse(settingsJSON.option_value);
 
-    await Meta.updatePostMetaEntry(sql, '_pw_attached_file', postId, file.name, false);
+    const filename = file.filename.split('.').slice(0, -1).join('.');
+    await Meta.updatePostMetaEntry(connection, '_pw_attached_file', postId, filename, false);
 
     const meta = {
       width: width,
       height: height,
-      file: file.name,
+      file: filename,
       sizes: [],
     };
 
-    for (const setting of settings) {
-      const resized = await Media.createThumbnail(
-        file,
-        setting.width,
-        setting.height,
-        file.name.replace(/\.[^/.]+$/, ''),
-        setting.slug,
-      );
-      await env.phrase_works.put(resized.name, resized.stream());
-      meta.sizes.push({
-        slug: setting.slug,
-        file: resized.name,
-        width: setting.width,
-        height: setting.height,
-        'mime-type': resized.mimeType || 'image/webp',
+    if (width != null) {
+      await ensureUploadsDir();
+
+      // map each setting to a promise
+      const resizePromises = settings.map(async (setting) => {
+        const { file: resized, fileName } = await Media.createThumbnail(
+          file,
+          parseInt(setting.width),
+          parseInt(setting.height),
+          filename,
+          setting.slug,
+        );
+
+        const filePath = path.join(UPLOADS_DIR, fileName);
+        const buffer = Buffer.from(await resized.arrayBuffer());
+
+        const hookFileUploadDataResult = await doAction('upload_file', filePath, fileName, buffer);
+        if (hookFileUploadDataResult == undefined) {
+          await fs.writeFile(filePath, buffer);
+        }
+
+        return {
+          slug: setting.slug,
+          file: fileName,
+          width: setting.width,
+          height: setting.height,
+          'mime-type': resized.type || 'image/webp',
+        };
       });
+
+      // wait for all thumbnails to finish
+      meta.sizes = await Promise.all(resizePromises);
     }
+
     const metaSave = await Meta.updatePostMetaEntry(
-      sql,
+      connection,
       '_pw_attachment_metadata',
       postId,
       JSON.stringify(meta),
@@ -103,94 +154,68 @@ export default class Media {
     if (!file.type.startsWith('image/')) {
       throw new Error('Invalid image file');
     }
-    if (file.size === 0) {
-      throw new Error('Empty file buffer');
-    }
 
     try {
-      const imageBuffer = new Uint8Array(await file.arrayBuffer());
-      const inputImage = PhotonImage.new_from_byteslice(imageBuffer);
-      const originalWidth = inputImage.get_width();
-      const originalHeight = inputImage.get_height();
+      const { data: base64 } = file;
+      const imageBuffer = Buffer.from(base64, 'base64');
+      const metadata = await sharp(imageBuffer).metadata();
 
-      console.log(`Original: ${originalWidth}x${originalHeight}, Target: ${width}x${height}`);
-
-      if (originalWidth === 0 || originalHeight === 0) {
-        inputImage.free();
+      if (!metadata.width || !metadata.height) {
         throw new Error('Invalid image dimensions');
       }
 
-      // Prevent upsampling
-      if (originalWidth < width && originalHeight < height) {
-        console.log('Image smaller than target, returning original');
-        inputImage.free();
-        return new File([imageBuffer], filename, {
+      const newFileName = `${originalFilename}-${filename}.webp`;
+
+      if (metadata.width < width && metadata.height < height) {
+        return {
+          file: new File([imageBuffer], newFileName, {
+            type: 'image/webp',
+            lastModified: Date.now(),
+          }),
+          fileName: newFileName,
+        };
+      }
+
+      const resizedImage = await sharp(imageBuffer)
+        .resize(width, height, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .webp()
+        .toBuffer();
+
+      return {
+        file: new File([resizedImage], newFileName, {
           type: 'image/webp',
           lastModified: Date.now(),
-        });
-      }
-
-      // Calculate cover scale ratio
-      const ratio = Math.max(width / originalWidth, height / originalHeight);
-      const resizedWidth = Math.ceil(originalWidth * ratio);
-      const resizedHeight = Math.ceil(originalHeight * ratio);
-
-      console.log(`Resizing to: ${resizedWidth}x${resizedHeight}`);
-
-      // Resize (aspect-fill)
-      const resizedImage = resize(
-        inputImage,
-        resizedWidth,
-        resizedHeight,
-        SamplingFilter.CatmullRom,
-      );
-
-      // Calculate centered crop coordinates
-      const cropX = Math.max(0, Math.floor((resizedWidth - width) / 2));
-      const cropY = Math.max(0, Math.floor((resizedHeight - height) / 2));
-      const cropX2 = Math.min(resizedWidth, cropX + width);
-      const cropY2 = Math.min(resizedHeight, cropY + height);
-
-      console.log(`Cropping from (${cropX}, ${cropY}) to (${cropX2}, ${cropY2})`);
-
-      // Crop center
-      let croppedImage = crop(resizedImage, cropX, cropY, cropX2, cropY2);
-
-      // Verify cropped dimensions
-      const croppedWidth = croppedImage.get_width();
-      const croppedHeight = croppedImage.get_height();
-      console.log(`Cropped: ${croppedWidth}x${croppedHeight}`);
-
-      if (croppedWidth !== width || croppedHeight !== height) {
-        console.warn(`Crop failed to enforce ${width}x${height}, resizing again`);
-        const finalImage = resize(croppedImage, width, height, SamplingFilter.CatmullRom);
-        croppedImage.free();
-        croppedImage = finalImage;
-      }
-
-      const outputBytes = croppedImage.get_bytes_webp();
-
-      // Free memory
-      inputImage.free();
-      resizedImage.free();
-      croppedImage.free();
-
-      const newFileName = `${originalFilename}-${filename}.webp`;
-      return new File([outputBytes], newFileName, {
-        type: 'image/webp',
-        lastModified: Date.now(),
-      });
+        }),
+        fileName: newFileName,
+      };
     } catch (err) {
-      console.error('Thumbnail generation failed:', err);
+      await System.writeLogData(err.stack || String(err), 'backend');
       throw new Error('Image resizing failed');
     }
   }
 
   static async getImageDimensions(file) {
+    if (!file || !file.data || typeof file.data !== 'string') {
+      throw new Error('Invalid file object: missing base64 data.');
+    }
+
     try {
-      const buffer = await file.arrayBuffer();
+      const { data: base64 } = file;
+      let buffer;
+
+      try {
+        const binary = Buffer.from(base64, 'base64');
+        if (binary.length === 0) throw new Error();
+        buffer = binary.buffer;
+      } catch {
+        throw new Error('Invalid base64 encoding in file data.');
+      }
+
+      const uint8 = Uint8Array(buffer);
       const view = new DataView(buffer);
-      const uint8 = new Uint8Array(buffer);
 
       // JPEG: Look for SOF (Start of Frame) marker
       if (uint8[0] === 0xff && uint8[1] === 0xd8) {
@@ -209,6 +234,7 @@ export default class Media {
           }
         }
       }
+
       // PNG: Check IHDR chunk
       else if (uint8[0] === 0x89 && uint8[1] === 0x50 && uint8[2] === 0x4e && uint8[3] === 0x47) {
         if (buffer.byteLength >= 24 && String.fromCharCode(...uint8.slice(12, 16)) === 'IHDR') {
@@ -249,32 +275,41 @@ export default class Media {
           return { width: width + 1, height: height + 1, buffer };
         }
       }
-
-      // Unsupported format
-      return null;
+      throw new Error('Unsupported or corrupted image format.');
     } catch (err) {
-      console.error('Error parsing image dimensions:', err);
-      return null;
+      await System.writeLogData(err.stack || String(err), 'backend');
+      console.error('Error parsing image dimensions:', {
+        message: err.message,
+        fileMeta: {
+          filename: file.filename,
+          type: file.type,
+          size: file.size,
+        },
+      });
+      throw err;
     }
   }
 
-  static async deleteFile(c, sql, id) {
-    const post = await sql`SELECT * FROM pw_posts WHERE id=${id}`;
-    if (post.length == 0) return false;
-
-    const key = post[0].guid.replace('https://localhost/', '');
-    const object = await c.env.phrase_works.get(key);
-    if (!object) {
-      console.log('File not found in R2');
-      return false;
+  static async deleteFile(c, sql, filepath) {
+    const postsRows = await sql`SELECT * FROM pw_posts WHERE guid=${filepath}`;
+    if (postsRows.length > 0) {
+      await sql`DELETE FROM pw_posts WHERE id=${postsRows[0].id}`;
+      await sql`DELETE FROM pw_postmeta WHERE post_id=${postsRows[0].id}`;
     }
-    await c.env.phrase_works.delete(key);
-    console.log('Deleted from R2');
 
-    // Optionally, delete from DB too
-    await sql`DELETE FROM pw_posts WHERE id=${id}`;
+    const absolutePath = path.join(process.cwd(), 'uploads', filepath);
+    try {
+      await fs.access(absolutePath);
+      await fs.unlink(absolutePath);
 
-    return true;
+      return true;
+    } catch (err) {
+      await System.writeLogData(err.stack || String(err), 'backend');
+      if (err.code === 'ENOENT') {
+        return false;
+      }
+      throw new Error(`Failed to delete file: ${err.message}`);
+    }
   }
 
   static async getSettings(sql) {
@@ -287,6 +322,126 @@ export default class Media {
     return { success: success };
   }
 
+  static async getLocalFiles(folder = '', offset = 0, type = '', search = '', env = process.env) {
+    const uploadsDir = path.join(process.cwd(), 'uploads', folder);
+    let files = [];
+    let folders = [];
+
+    try {
+      const dirEntries = await fs.readdir(uploadsDir, { withFileTypes: true });
+
+      for (const entry of dirEntries) {
+        const fullPath = path.join(uploadsDir, entry.name);
+        const relativePath = path.join(folder, entry.name);
+        const key = relativePath.toLowerCase();
+
+        if (
+          key.includes('-thumbnail.') ||
+          key.includes('-large.') ||
+          key.includes('-medium.') ||
+          key.includes('-banner.') ||
+          entry.name === '.DS_Store'
+        ) {
+          continue;
+        }
+
+        if (entry.isFile()) {
+          const stats = await fs.stat(fullPath);
+          files.push({
+            id: relativePath,
+            key: relativePath,
+            size: stats.size,
+            contentType: this.getContentType(entry.name),
+            lastModified: stats.mtime,
+            url: `${env.APP_BASE_URL || 'http://localhost'}/uploads/${relativePath}`,
+          });
+        } else if (entry.isDirectory()) {
+          folders.push(relativePath);
+        }
+      }
+
+      if (type) {
+        files = files.filter((file) => file.contentType.includes(type));
+      }
+      if (search) {
+        const searchLower = search.toLowerCase();
+        files = files.filter((file) => file.key.toLowerCase().includes(searchLower));
+      }
+
+      files = files.slice(offset);
+
+      return {
+        files,
+        folders,
+      };
+    } catch (err) {
+      await System.writeLogData(err.stack || String(err), 'backend');
+      console.error('Error listing files:', err);
+      throw new Error('Failed to list files');
+    }
+  }
+
+  static getContentType(fileName) {
+    const ext = path.extname(fileName).toLowerCase();
+    const mimeTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.webp': 'image/webp',
+      '.bmp': 'image/bmp',
+      '.ico': 'image/x-icon',
+      '.tiff': 'image/tiff',
+      '.pdf': 'application/pdf',
+      '.txt': 'text/plain',
+      '.mp4': 'video/mp4',
+      '.mp3': 'audio/mpeg',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    return mimeTypes[ext] || 'application/octet-stream';
+  }
+
+  static async getR2Files(folder, offset, type, search, env) {
+    const s3Client = new S3Client({
+      region: 'auto',
+      endpoint: env.R2_ENDPOINT,
+      credentials: {
+        accessKeyId: env.R2_ACCESS_KEY_ID,
+        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      },
+    });
+    const allFiles = await getAllItems(s3Client, env.R2_BUCKET_NAME);
+    const files = allFiles.objects.reduce((acc, obj) => {
+      const key = obj.Key.toLowerCase();
+      if (
+        key.includes('-thumbnail.') ||
+        key.includes('-large.') ||
+        key.includes('-medium.') ||
+        key.includes('-banner.')
+      ) {
+        return acc; // skip
+      }
+      acc.push({
+        id: obj.Key,
+        key: obj.Key,
+        size: obj.Size,
+        contentType: obj.ContentType || 'unknown',
+        lastModified: obj.LastModified,
+        url: `http://localhost/r2/${obj.Key}`,
+      });
+      return acc;
+    }, []);
+    const folders = allFiles.delimitedPrefixes || [];
+    const result = {
+      files,
+      folders,
+    };
+
+    return result;
+  }
+
   static async getFiles(folder, offset, type, search, connection) {
     const conditions = [`p.post_type = 'attachment'`];
     const values = [];
@@ -295,17 +450,10 @@ export default class Media {
       conditions.push(`p.post_mime_type LIKE 'image/%'`);
     } else if (type === 'document') {
       conditions.push(`
-            p.post_mime_type IN (
-              'application/pdf',
-              'application/msword',
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-              'application/vnd.ms-excel',
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              'application/vnd.ms-powerpoint',
-              'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-              'text/plain'
-            )
+            p.post_mime_type NOT LIKE 'image/%'
           `);
+    } else if (type === 'not_image') {
+      conditions.push(`p.post_mime_type NOT LIKE 'image/%'`);
     }
 
     if (search && search.trim() !== '') {
@@ -324,12 +472,15 @@ export default class Media {
             p.post_author,
             p.post_date,
             pm.meta_value AS file_path,
-            attachment_metadata.meta_value AS metadata
+            attachment_metadata.meta_value AS metadata,
+            imagemeta.meta_value AS imagemeta
           FROM pw_posts p
           LEFT JOIN pw_postmeta pm 
             ON p.ID = pm.post_id AND pm.meta_key = '_pw_attached_file'
           LEFT JOIN pw_postmeta attachment_metadata 
             ON p.ID = attachment_metadata.post_id AND attachment_metadata.meta_key = '_pw_attachment_metadata'
+          LEFT JOIN pw_postmeta imagemeta 
+            ON p.ID = imagemeta.post_id AND imagemeta.meta_key = '_pw_meta_data'
           ${whereClause}
           ORDER BY p.post_date DESC
           LIMIT 20 OFFSET $${values.length + 1};
@@ -342,6 +493,7 @@ export default class Media {
 
     for (const file of filesDb) {
       const title = file.guid.replace('https://localhost/', '');
+
       const data = {
         id: file.id,
         filename: title,
@@ -350,6 +502,7 @@ export default class Media {
         date: file.post_date.toISOString(),
         author: null,
         attachment_metadata: file.metadata,
+        metadata: file.imagemeta,
       };
 
       if (file.post_author !== '' && file.post_author != null) {
@@ -368,16 +521,8 @@ export default class Media {
       whereParts.push(`post_mime_type LIKE $${valuesCount.length + 1}`);
       valuesCount.push('image/%');
     } else if (type === 'document') {
-      whereParts.push(`post_mime_type IN (
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'text/plain'
-          )`);
+      whereParts.push(`post_mime_type NOT LIKE $${valuesCount.length + 1}`);
+      valuesCount.push('image/%');
     }
 
     whereParts.push(`post_type = 'attachment'`);
@@ -407,12 +552,15 @@ export default class Media {
             p.post_author,
             p.post_date,
             pm.meta_value AS file_path,
-            attachment_metadata.meta_value AS metadata
+            attachment_metadata.meta_value AS metadata,
+            imagemeta.meta_value as imagemeta
           FROM pw_posts p
           LEFT JOIN pw_postmeta pm 
             ON p.ID = pm.post_id AND pm.meta_key = '_pw_attached_file'
           LEFT JOIN pw_postmeta attachment_metadata 
-            ON p.ID = attachment_metadata.post_id AND attachment_metadata.meta_key = '_pw_attachment_metadata'
+            ON p.ID = attachment_metadata.post_id AND attachment_metadata.meta_key = '_pw_attachment_metadata'          
+          LEFT JOIN pw_postmeta imagemeta 
+            ON p.ID = imagemeta.post_id AND imagemeta.meta_key = '_pw_meta_data'
           WHERE p.id=${id}`;
     const title = file[0].guid.replace('https://localhost/', '');
     const data = {
@@ -429,5 +577,93 @@ export default class Media {
       data.author = await User.findById(file[0].post_author, connection);
     }
     return data;
+  }
+  static async getFile(r2File, connection) {
+    const [file] = await connection`SELECT 
+            p.ID, 
+            p.post_title, 
+            p.post_mime_type, 
+            p.guid, 
+            p.post_author,
+            p.post_date,
+            pm.meta_value AS file_path,
+            attachment_metadata.meta_value AS metadata,
+            imagemeta.meta_value as imagemeta
+          FROM pw_posts p
+          LEFT JOIN pw_postmeta pm 
+            ON p.ID = pm.post_id AND pm.meta_key = '_pw_attached_file'
+          LEFT JOIN pw_postmeta attachment_metadata 
+            ON p.ID = attachment_metadata.post_id AND attachment_metadata.meta_key = '_pw_attachment_metadata'          
+          LEFT JOIN pw_postmeta imagemeta 
+            ON p.ID = imagemeta.post_id AND imagemeta.meta_key = '_pw_meta_data'
+          WHERE p.guid=${r2File.key}`;
+
+    let data = null;
+    if (file) {
+      const title = file.guid.replace('http://localhost/', '');
+
+      data = {
+        id: file.id,
+        filename: title,
+        mimetype: file.post_mime_type,
+        url: file.guid,
+        date: file.post_date.toISOString(),
+        author: null,
+        attachment_metadata: file.metadata,
+      };
+
+      if (file.post_author !== '' && file.post_author != null) {
+        data.author = await User.findById(file.post_author, connection);
+      }
+    } else {
+      data = {
+        id: null,
+        filename: r2File.key,
+        mimetype:
+          r2File.contentType == 'unknown'
+            ? Media.getContentTypeByExtension(r2File.key)
+            : r2File.contentType,
+        url: `http://localhost/r2/${r2File.key}`,
+        date: '',
+        author: null,
+        attachment_metadata: JSON.stringify({}),
+      };
+    }
+    return data;
+  }
+  static async getMediaItemData(fileId, connection) {
+    const data =
+      await connection`SELECT * FROM pw_postmeta WHERE post_id = 98 AND meta_key = '_pw_meta_data'`;
+    return JSON.stringify(data[0].meta_value);
+  }
+
+  static getContentTypeByExtension(filename) {
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+      // Images
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      svg: 'image/svg+xml',
+      bmp: 'image/bmp',
+      tiff: 'image/tiff',
+
+      // Documents
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      txt: 'text/plain',
+      rtf: 'application/rtf',
+      odt: 'application/vnd.oasis.opendocument.text',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ppt: 'application/vnd.ms-powerpoint',
+      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      csv: 'text/csv',
+    };
+
+    return mimeTypes[extension] || 'application/octet-stream';
   }
 }

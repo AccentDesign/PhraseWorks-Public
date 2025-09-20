@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ee from 'event-emitter';
 
-import Alert from './Alert'; // Use only once, removed duplicate import
+import Alert from './Alert';
 
 const emitter = new ee();
 
@@ -13,21 +13,28 @@ export default function Notification() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
+    const timeoutsRef = new Map();
+
     const handleNotification = (msgVal, typeVal) => {
       const newNotification = { id: Date.now(), type: typeVal, msg: msgVal };
 
       setNotifications((prev) => [...prev, newNotification]);
 
-      // ✅ Auto-remove notification after 10 seconds
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setNotifications((prev) => prev.filter((n) => n.id !== newNotification.id));
+        timeoutsRef.delete(newNotification.id);
       }, 10000);
+
+      timeoutsRef.set(newNotification.id, timeoutId);
     };
 
     emitter.on('notification', handleNotification);
 
     return () => {
       emitter.off('notification', handleNotification);
+      // Clear all active timeouts on unmount
+      timeoutsRef.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutsRef.clear();
     };
   }, []);
 

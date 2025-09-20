@@ -9,11 +9,8 @@ const Content = ({
   HandleContentChange,
 }) => {
   return (
-    <div className="mt-4">
-      <div className="flex flex-row justify-between items-center">
-        <label className="">
-          Content <span className="text-red-600">*</span>
-        </label>
+    <div className="my-4">
+      <div className="flex flex-row justify-end items-center">
         <div className="flex justify-end border-b border-gray-200">
           <button
             className={`px-4 py-2 ${

@@ -15,7 +15,7 @@ const Filter = ({ setFilter, totalUsers, filter, users, loginPassword }) => {
   }, []);
 
   return (
-    <div className="flex flex-row gap-4 mt-4">
+    <div className="filter-panel">
       <button
         type="button"
         onClick={() => setFilter('all')}

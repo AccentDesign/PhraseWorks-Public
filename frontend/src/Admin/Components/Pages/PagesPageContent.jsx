@@ -7,6 +7,8 @@ import {
   APIGetPostsByAuthor,
   APIGetPostsByStatus,
   APIUpdatePostStatus,
+  APIDeletePost,
+  APIGetPostTableFields,
 } from '../../../API/APIPosts';
 import { APIConnectorContext } from '../../../Contexts/APIConnectorContext';
 import { UserContext } from '../../../Contexts/UserContext';
@@ -19,6 +21,7 @@ const PagesPageContent = () => {
   const { user } = useContext(UserContext);
   const [pages, setPages] = useState([]);
   const [allPages, setAllPages] = useState([]);
+  const [pageTableFields, setPageTableFields] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [reloadPages, setReloadPages] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -96,8 +99,17 @@ const PagesPageContent = () => {
   };
   const draftPage = async (id) => {
     const data = await APIUpdatePostStatus(loginPassword, 'draft', id);
+
     if (data.status == 200) {
       if (data.data.updatePostStatus.success) {
+        setReloadPages(true);
+      }
+    }
+  };
+  const permanentDelete = async (id) => {
+    const data = await APIDeletePost(loginPassword, id);
+    if (data.status == 200) {
+      if (data.data.deletePost.success) {
         setReloadPages(true);
       }
     }
@@ -111,21 +123,24 @@ const PagesPageContent = () => {
         setTotalPages(data.data.getPosts.total);
       }
     } else if (filter == 'mine') {
-      const data = await APIGetPostsByAuthor(loginPassword, page, perPage, 'page', user.id);
+      const data = await APIGetPostsByAuthor(page, perPage, 'page', user.id);
       if (data.status == 200) {
         setPages(data.data.getPostsByAuthor.posts);
-        setTotalPages(data.data.getPostsByAuthor.total);
       }
     } else {
       const data = await APIGetPostsByStatus(loginPassword, page, perPage, 'page', filter);
       if (data.status == 200) {
         setPages(data.data.getPostsByStatus.posts);
-        setTotalPages(data.data.getPostsByStatus.total);
       }
     }
     const allData = await APIAllGetPosts(loginPassword, 1, 2147483647, 'page');
     if (allData.status == 200) {
       setAllPages(allData.data.getPosts.posts);
+    }
+
+    const fieldsData = await APIGetPostTableFields(loginPassword, 'page');
+    if (fieldsData.status == 200) {
+      setPageTableFields(fieldsData.data.getPostTableFields.fields);
     }
   };
 
@@ -161,7 +176,7 @@ const PagesPageContent = () => {
           filter={filter}
         />
 
-        <div className="panel mt-8mt-8">
+        <div className="panel mt-8 mt-8">
           <ListView
             pages={pages}
             selectedIds={selectedIds}
@@ -170,8 +185,10 @@ const PagesPageContent = () => {
             binPage={binPage}
             publishPage={publishPage}
             draftPage={draftPage}
+            permanentDelete={permanentDelete}
             allSelected={allSelected}
             toggleAllCheckboxes={toggleAllCheckboxes}
+            pageTableFields={pageTableFields}
           />
           <Pagination totalPages={totalPages} page={page} perPage={perPage} setPage={setPage} />
         </div>

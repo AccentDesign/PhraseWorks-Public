@@ -1,1 +1,0 @@
-import{j as s,V as t,H as e,P as o,b as n}from"./index--vfy0tje.js";const r=()=>s.jsx("div",{children:"PostsPageContent"}),i=()=>(document.title="Posts",s.jsxs(t,{children:[s.jsx(e,{}),s.jsx(o,{children:s.jsx(r,{})}),s.jsx(n,{})]}));export{i as default};

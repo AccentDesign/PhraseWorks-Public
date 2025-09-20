@@ -1,6 +1,15 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { APIConnectorContext } from '../../../Contexts/APIConnectorContext.jsx';
-import { APIGetFile, APISendUpload, APIGetFiles, APIDeleteFiles } from '../../../API/APIMedia.js';
+import {
+  APIGetFile,
+  APISendUpload,
+  APIUploadFile,
+  APIGetFiles,
+  APIDeleteFiles,
+  APIDeleteFile,
+  APIReplaceFile,
+  APIReplaceFileWithSetting,
+} from '../../../API/APIMedia.js';
 import TitleBar from './MediaPage/TitleBar.jsx';
 import SearchBar from './MediaPage/SearchBar.jsx';
 import ActionsButton from './MediaPage/ActionsButton.jsx';
@@ -9,6 +18,8 @@ import BoxView from './MediaPage/BoxView.jsx';
 import Pagination from './MediaPage/Pagination.jsx';
 import Upload from './MediaPage/Upload.jsx';
 import Detail from './MediaPage/Detail.jsx';
+import { notify } from '../../../Utils/Notification.jsx';
+import { APILogError } from '../../../API/APISystem.js';
 
 const MediaPageContent = () => {
   const { loginPassword } = useContext(APIConnectorContext);
@@ -25,10 +36,13 @@ const MediaPageContent = () => {
   const [type, setType] = useState('all');
   const [search, setSearch] = useState('');
   const perPage = 20;
+  const [editFile, setEditFile] = useState(false);
 
   const [sliderOpen, setSliderOpen] = useState(false);
   const [sliderDetailsOpen, setSliderDetailsOpen] = useState(false);
   const [applyTriggered, setApplyTriggered] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [reloadFiles, setReloadFiles] = useState(true);
   const HandleClose = () => {};
 
   const toggleCheckbox = (id) => {
@@ -52,22 +66,64 @@ const MediaPageContent = () => {
     setSliderDetailsOpen(true);
   };
 
+  const deleteFile = async (filename) => {
+    try {
+      const result = await APIDeleteFile(loginPassword, filename);
+      if (result.status === 200 && result.data.deleteFile) {
+        setDetailsId(null);
+        fetchData();
+        setSliderDetailsOpen(false);
+        notify('File deleted', 'success');
+      }
+    } catch (err) {
+      await APILogError(err.stack || String(err));
+      console.error('Delete failed:', err);
+    }
+  };
+
   const SendData = async () => {
     const inputFiles = fileInputRef.current.files;
     if (!inputFiles.length) return;
+    const file = fileInputRef.current.files[0];
+    if (!file) {
+      notify('Please select a file.', 'error');
+      return;
+    }
+
     try {
-      const result = await APISendUpload(loginPassword, Array.from(inputFiles));
-      if (result.status == 200) {
+      const result = await APIUploadFile(loginPassword, file);
+      if (result.status === 200 && result.data.uploadFile) {
+        notify('File uploaded', 'success');
         const key = file.name;
-        const imgBlob = await APIGetFile(key);
+        let safeFilename = key.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const imgBlob = await APIGetFile(safeFilename);
 
         const url = URL.createObjectURL(imgBlob);
         setImgUrl(url);
         setPage(1);
         fetchData();
+        fileInputRef.current.value = '';
       }
     } catch (err) {
+      await APILogError(err.stack || String(err));
       console.error('Upload or fetch failed:', err);
+    }
+  };
+
+  const replaceFile = async (id, filename, file, selectedSetting) => {
+    if (!file) {
+      notify('Please select a file.', 'error');
+      return;
+    }
+    const croppedFile = file;
+    const result = await APIReplaceFileWithSetting(loginPassword, id, croppedFile, selectedSetting);
+
+    if (result.status === 200 && result.data.replaceFileWithSetting) {
+      notify('File uploaded', 'success');
+      setEditFile(false);
+      setPage(1);
+      setSliderDetailsOpen(false);
+      fetchData();
     }
   };
 
@@ -77,26 +133,28 @@ const MediaPageContent = () => {
       const tmpFiles = [];
       setTotalFiles(data.data.getMediaFiles.total);
       data.data.getMediaFiles.files.map((file) => {
-        const url = `http://localhost:8787/r2/${file.filename}`;
+        const url = `http://localhost/uploads/${file.filename}`;
         const newData = {
-          id: file.id,
+          id: file.id ? file.id : crypto.randomUUID(),
           filename: file.filename,
           mimetype: file.mimetype,
           url: url,
           author: file.author,
           date: file.date,
           attachment_metadata: JSON.parse(file.attachment_metadata),
+          metadata: file?.metadata ? JSON.parse(file.metadata) : {},
         };
         tmpFiles.push(newData);
       });
       setFiles(tmpFiles);
+      setReloadFiles(true);
     }
   };
 
   useEffect(() => {
     if (applyTriggered && bulkAction === 'delete') {
       handleApply();
-      setApplyTriggered(false); // reset after apply
+      setApplyTriggered(false);
     }
   }, [bulkAction, applyTriggered]);
 
@@ -108,6 +166,9 @@ const MediaPageContent = () => {
     <>
       <div className="w-full">
         <TitleBar setSliderOpen={setSliderOpen} />
+        {previewImage && (
+          <img src={previewImage} alt="Preview" style={{ maxWidth: '300px', maxHeight: '300px' }} />
+        )}
         <SearchBar
           view={view}
           setView={setView}
@@ -124,11 +185,23 @@ const MediaPageContent = () => {
           />
         )}
 
-        <div className="panel mt-8mt-8">
+        <div className="panel mt-8 mt-8">
           {view == 'list' ? (
-            <ListView files={files} selectedIds={selectedIds} toggleCheckbox={toggleCheckbox} />
+            <ListView
+              files={files}
+              selectedIds={selectedIds}
+              toggleCheckbox={toggleCheckbox}
+              ShowDetails={ShowDetails}
+              reloadFiles={reloadFiles}
+              setReloadFiles={setReloadFiles}
+            />
           ) : (
-            <BoxView files={files} ShowDetails={ShowDetails} />
+            <BoxView
+              files={files}
+              ShowDetails={ShowDetails}
+              reloadFiles={reloadFiles}
+              setReloadFiles={setReloadFiles}
+            />
           )}
           <Pagination totalFiles={totalFiles} page={page} perPage={perPage} setPage={setPage} />
         </div>
@@ -151,6 +224,10 @@ const MediaPageContent = () => {
         toggleCheckbox={toggleCheckbox}
         setBulkAction={setBulkAction}
         setApplyTriggered={setApplyTriggered}
+        deleteFile={deleteFile}
+        editFile={editFile}
+        setEditFile={setEditFile}
+        replaceFile={replaceFile}
       />
     </>
   );

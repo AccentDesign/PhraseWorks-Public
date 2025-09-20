@@ -1,1 +1,0 @@
-import{j as s}from"./index-DofY50D7.js";import r from"./Heading-CFle993W.js";import{H as e,F as t}from"./PageContent-CuA2cKT8.js";import"./index-Cgspjvsu.js";const x=()=>s.jsxs(s.Fragment,{children:[s.jsx(e,{}),s.jsxs("div",{className:"pt-[5rem] lg:pt-[8rem] f-1 bg-white",children:[s.jsx(r,{}),"Test.jsx"]}),s.jsx(t,{})]});export{x as default};

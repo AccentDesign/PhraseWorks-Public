@@ -17,7 +17,7 @@ const MediaBoxView = ({ files, setFeaturedImageId, setSliderMediaOpen }) => {
             }}
           >
             <img
-              src={`http://localhost:8787/r2/${thumbnail}`}
+              src={`http://localhost/uploads/${thumbnail}`}
               className="w-[150px] h-[150px] object-cover"
               alt={file?.post_title || file?.filename}
             />

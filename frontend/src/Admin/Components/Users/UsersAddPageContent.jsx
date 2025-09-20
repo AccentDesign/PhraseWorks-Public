@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { get_user_by, generatePassword, getPasswordStrength } from '../../../Utils/Users';
+import { get_user_by, generatePassword, getPasswordStrength } from '../../../Includes/Users';
 import { APIConnectorContext } from '../../../Contexts/APIConnectorContext';
 import { APICreateUser, APIGetUserRoles, APIUpdateUser } from '../../../API/APIUsers';
 import { notify } from '../../../Utils/Notification';
@@ -48,75 +48,73 @@ const UsersAddPageContent = () => {
   }, []);
 
   return (
-    <div className="w-full flex flex-col md:flex-row">
-      <div className="w-full">
-        <TitleBar />
+    <div className="w-full">
+      <TitleBar />
 
-        <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-white w-full mt-8 p-4">
-          <Field
-            type="text"
-            name="nicename"
-            title="Nice Name"
-            value={niceName}
-            updateFunction={setNiceName}
-          />
-          <Field
-            type="text"
-            name="first_name"
-            title="First Name"
-            value={firstName}
-            updateFunction={setFirstName}
-          />
+      <div className="panel mt-8">
+        <Field
+          type="text"
+          name="nicename"
+          title="Nice Name"
+          value={niceName}
+          updateFunction={setNiceName}
+        />
+        <Field
+          type="text"
+          name="first_name"
+          title="First Name"
+          value={firstName}
+          updateFunction={setFirstName}
+        />
 
-          <Field
-            type="text"
-            name="last_name"
-            title="Last Name"
-            value={lastName}
-            updateFunction={setLastName}
+        <Field
+          type="text"
+          name="last_name"
+          title="Last Name"
+          value={lastName}
+          updateFunction={setLastName}
+        />
+        <Role
+          name="role"
+          title="Role"
+          value={userRole}
+          updateFunction={setUserRole}
+          options={roles}
+        />
+        <h1 className="text-xl mb-4">Contact Info</h1>
+        <Field type="email" name="email" title="Email" value={email} updateFunction={setEmail} />
+        <h1 className="text-xl mb-4">Account Management</h1>
+        <div className="w-full my-4">
+          <label>New Password</label>
+          <Password
+            password={password}
+            setPassword={setPassword}
+            hide={hide}
+            setHide={setHide}
+            getPasswordStrength={getPasswordStrength}
           />
-          <Role
-            name="role"
-            title="Role"
-            value={userRole}
-            updateFunction={setUserRole}
-            options={roles}
-          />
-          <h1 className="text-xl mb-4">Contact Info</h1>
-          <Field type="email" name="email" title="Email" value={email} updateFunction={setEmail} />
-          <h1 className="text-xl mb-4">Account Management</h1>
-          <div className="w-full my-4">
-            <label>New Password</label>
-            <Password
-              password={password}
-              setPassword={setPassword}
-              hide={hide}
-              setHide={setHide}
-              getPasswordStrength={getPasswordStrength}
-            />
-          </div>
-          <button
-            type="button"
-            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
-            onClick={() => {
-              addUser();
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-5 mr-2"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Add
-          </button>
         </div>
+        <button
+          type="button"
+          className="text-white bg-blue-700 hover:bg-blue-800 btn"
+          onClick={() => {
+            addUser();
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-5 mr-2"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Add
+        </button>
       </div>
     </div>
   );

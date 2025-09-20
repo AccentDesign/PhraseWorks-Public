@@ -7,23 +7,27 @@ const ToolTip = ({ id, content, toolTipClass }) => {
 
   useEffect(() => {
     const triggerElement = document.querySelector(`[data-tooltip-trigger="${id}"]`);
+    if (!triggerElement) return;
+
     const showTooltip = () => setVisible(true);
     const hideTooltip = () => setVisible(false);
 
     triggerElement.addEventListener('mouseenter', showTooltip);
     triggerElement.addEventListener('mouseleave', hideTooltip);
-    if (visible) {
-      const tooltipElement = tooltipRef.current;
-      const rect = triggerElement.getBoundingClientRect();
-      tooltipElement.style.top = `-70px`;
-      tooltipElement.style.left = `-8px`;
-    }
 
     return () => {
       triggerElement.removeEventListener('mouseenter', showTooltip);
       triggerElement.removeEventListener('mouseleave', hideTooltip);
     };
-  }, [id, visible]);
+  }, [id]);
+
+  useEffect(() => {
+    if (visible && tooltipRef.current) {
+      const tooltipElement = tooltipRef.current;
+      tooltipElement.style.top = `-70px`;
+      tooltipElement.style.left = `-8px`;
+    }
+  }, [visible]);
 
   return (
     <div

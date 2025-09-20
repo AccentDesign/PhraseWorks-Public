@@ -1,1 +1,0 @@
-import{j as t}from"./index-D3eQ7WtV.js";import{V as e,H as s,P as n,F as r}from"./PageContent-BDj_v4Ns.js";import"./index-C-Xsb71F.js";const o=()=>t.jsx("div",{children:"SettingsPageContent"}),g=()=>(document.title="Settings",t.jsxs(e,{children:[t.jsx(s,{}),t.jsx(n,{children:t.jsx(o,{})}),t.jsx(r,{})]}));export{g as default};

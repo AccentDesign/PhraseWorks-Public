@@ -2,7 +2,7 @@ import React from 'react';
 
 const Filter = ({ setFilter, totalPosts, filter, posts, user }) => {
   return (
-    <div className="flex flex-row gap-4 mt-4">
+    <div className="filter-panel">
       <button
         type="button"
         onClick={() => setFilter('all')}
@@ -28,6 +28,16 @@ const Filter = ({ setFilter, totalPosts, filter, posts, user }) => {
         Drafts{' '}
         <span className="font-normal">
           ({posts.filter((post) => post.post_status == 'draft').length})
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter('scheduled')}
+        className={`text-sm ${filter == 'scheduled' ? 'text-black font-bold' : 'text-blue-800'}`}
+      >
+        Scheduled{' '}
+        <span className="font-normal">
+          ({posts.filter((post) => post.post_status == 'scheduled').length})
         </span>
       </button>
       {posts.filter((post) => post.post_status == 'trash').length > 0 && (

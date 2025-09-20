@@ -3,9 +3,9 @@ import Sidebar from './Sidebar';
 
 const PageContent = ({ children }) => {
   return (
-    <div className="flex flex-row bg-gray-100 min-h-[100vh] pb-8 pt-[40px]">
+    <div className="page-content">
       <Sidebar />
-      <div className="md:ml-[300px] mr-8 mt-[40px] w-full ">{children}</div>
+      <div className="page-content-main">{children}</div>
     </div>
   );
 };

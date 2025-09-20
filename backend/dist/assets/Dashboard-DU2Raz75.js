@@ -1,1 +1,0 @@
-import{j as r}from"./index-D3eQ7WtV.js";import{V as s,H as e,P as o,F as t}from"./PageContent-BDj_v4Ns.js";import"./index-C-Xsb71F.js";const a=()=>r.jsx("div",{children:"DashboardPageContent"}),x=()=>r.jsxs(s,{children:[r.jsx(e,{}),r.jsx(o,{children:r.jsx(a,{})}),r.jsx(t,{})]});export{x as default};

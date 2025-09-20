@@ -3,15 +3,12 @@ import { Link } from 'react-router-dom';
 
 const TitleBar = () => {
   return (
-    <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
-      <div className="flex-row items-center justify-between p-4 space-y-3 sm:flex sm:space-y-0 sm:space-x-4">
+    <div className="title-panel">
+      <div className="title-bar">
         <div>
           <h2 className="text-3xl">Posts</h2>
         </div>
-        <Link
-          to="/admin/posts/new"
-          className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
-        >
+        <Link to="/admin/posts/new" className="text-white bg-blue-700 hover:bg-blue-800 btn">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-3.5 w-3.5 mr-2 -ml-1"

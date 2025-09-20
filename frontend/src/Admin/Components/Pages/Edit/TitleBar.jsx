@@ -3,8 +3,8 @@ import React from 'react';
 const TitleBar = ({ post }) => {
   const origin = window.location.origin;
   return (
-    <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
-      <div className="flex-row items-center justify-between p-4 space-y-3 sm:flex sm:space-y-0 sm:space-x-4">
+    <div className="title-panel">
+      <div className="title-bar">
         <div>
           <h2 className="text-3xl">Edit Page</h2>
           {post?.post_status == 'publish' && (

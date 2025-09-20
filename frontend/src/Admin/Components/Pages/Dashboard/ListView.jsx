@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 
 const ListView = ({
@@ -9,14 +9,17 @@ const ListView = ({
   binPage,
   publishPage,
   draftPage,
+  permanentDelete,
   allSelected,
   toggleAllCheckboxes,
+  pageTableFields,
 }) => {
+  const fieldRenderers = window.__FIELD_RENDERERS__ || {};
   return (
-    <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-      <thead className="text-xs text-gray-700 uppercase bg-gray-200  ">
+    <table className="table table-striped">
+      <thead>
         <tr>
-          <th scope="col" className="px-6 py-3">
+          <th scope="col">
             <input
               type="checkbox"
               checked={allSelected}
@@ -24,119 +27,123 @@ const ListView = ({
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 focus:ring-2"
             />
           </th>
-          <th scope="col" className="px-6 py-3">
-            Title
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Author
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Categories
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Tags
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Date
-          </th>
+          {pageTableFields
+            ?.slice()
+            .sort((a, b) => a.order - b.order)
+            .slice(1)
+            .map((field, idx) => (
+              <th key={idx} scope="col">
+                {field.title}
+              </th>
+            ))}
         </tr>
       </thead>
       <tbody>
-        {pages.map((page, idx) => (
-          <tr
-            key={idx}
-            className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
-          >
-            <th
-              scope="row"
-              className="px-6 py-4 w-[40px] font-medium text-gray-900 whitespace-nowrap dark:text-white"
-            >
+        {pages.map((post, idx) => (
+          <tr key={idx}>
+            <td scope="row" className="table-checkbox-cell">
               <input
                 id="default-checkbox"
                 type="checkbox"
-                value={page.id}
-                checked={selectedIds.includes(page.id)}
-                onChange={() => toggleCheckbox(page.id)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 focus:ring-2"
+                value={post.id}
+                checked={selectedIds.includes(post.id)}
+                onChange={() => toggleCheckbox(post.id)}
+                className="checkbox"
               />
-            </th>
-            <td className="px-6 py-4 flex flex-col">
-              <div className="flex flex-row items-center">
-                <Link to={`/admin/pages/edit/${page.id}`} className="text-blue-700 font-bold">
-                  {page.post_title} - <span className="text-gray-800">{page.post_status}</span>
-                </Link>
-              </div>
-              <div className="flex flex-row items-center gap-4">
-                {page.post_status == 'publish' && (
-                  <p>
-                    <Link
-                      to={`/${page.post_name}`}
-                      className="text-blue-700 text-sm underline underline-offset-4 hover:text-blue-500"
-                    >
-                      View
-                    </Link>
-                  </p>
-                )}
-                {page.post_status == 'trash' ? (
-                  <>
-                    <p>
-                      <button
-                        className="text-blue-700 text-sm underline underline-offset-4 hover:text-blue-500"
-                        onClick={() => restorePage(page.id)}
-                      >
-                        Restore
-                      </button>
-                    </p>
-                    <p>
-                      <button className="text-red-700 text-sm underline underline-offset-4 hover:text-blue-500">
-                        Permanently Delete
-                      </button>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    {page.post_status != 'publish' && (
-                      <p>
-                        <button
-                          className="text-blue-700 text-sm underline underline-offset-4 hover:text-blue-500"
-                          onClick={() => {
-                            publishPage(page.id);
-                          }}
-                        >
-                          Publish
-                        </button>
-                      </p>
-                    )}
-                    {page.post_status != 'draft' && (
-                      <p>
-                        <button
-                          className="text-blue-700 text-sm underline underline-offset-4 hover:text-blue-500"
-                          onClick={() => {
-                            draftPage(page.id);
-                          }}
-                        >
-                          Draft
-                        </button>
-                      </p>
-                    )}
-                    <p>
-                      <button
-                        className="text-red-700 text-sm underline underline-offset-4 hover:text-blue-500"
-                        onClick={() => {
-                          binPage(page.id);
-                        }}
-                      >
-                        Bin
-                      </button>
-                    </p>
-                  </>
-                )}
-              </div>
             </td>
-            <td className="px-6 py-4">{page.author.user_login}</td>
-            <td className="px-6 py-4">-</td>
-            <td className="px-6 py-4">-</td>
-            <td className="px-6 py-4">{new Date(page.post_date).toLocaleDateString()}</td>
+            {pageTableFields
+              ?.slice()
+              .sort((a, b) => a.order - b.order)
+              .slice(1)
+              .map((field, idx) => (
+                <Fragment key={idx}>
+                  {field.name == 'title' && (
+                    <td className="flex flex-col">
+                      <div className="flex flex-row items-center">
+                        <Link
+                          to={`/admin/pages/edit/${post.id}`}
+                          className="text-blue-700 font-bold"
+                        >
+                          {post.post_title} -{' '}
+                          <span className="text-gray-800">{post.post_status}</span>
+                        </Link>
+                      </div>
+                      <div className="flex flex-row items-center gap-4">
+                        {post.post_status == 'publish' && (
+                          <p>
+                            <Link to={`/${post.post_name}`} className="link-blue-xs">
+                              View
+                            </Link>
+                          </p>
+                        )}
+                        {post.post_status == 'trash' ? (
+                          <>
+                            <p>
+                              <button className="link-blue-xs" onClick={() => restorePage(post.id)}>
+                                Restore
+                              </button>
+                            </p>
+                            <p>
+                              <button
+                                className="link-red-xs"
+                                onClick={() => permanentDelete(post.id)}
+                              >
+                                Permanently Delete
+                              </button>
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            {post.post_status != 'publish' && (
+                              <p>
+                                <button
+                                  className="link-blue-xs"
+                                  onClick={() => {
+                                    publishPage(post.id);
+                                  }}
+                                >
+                                  Publish
+                                </button>
+                              </p>
+                            )}
+                            {post.post_status != 'draft' && (
+                              <p>
+                                <button
+                                  className="link-blue-xs"
+                                  onClick={() => {
+                                    draftPage(post.id);
+                                  }}
+                                >
+                                  Draft
+                                </button>
+                              </p>
+                            )}
+                            <p>
+                              <button
+                                className="link-red-xs"
+                                onClick={() => {
+                                  binPage(post.id);
+                                }}
+                              >
+                                Bin
+                              </button>
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  {field.name == 'author' && <td>{post.author.user_login}</td>}
+                  {field.name == 'categories' && <td>-</td>}
+                  {field.name == 'tags' && <td>-</td>}
+                  {field.name == 'date' && <td>{new Date(post.post_date).toLocaleDateString()}</td>}
+                  {fieldRenderers[field.name] && fieldRenderers[field.name](post)}
+                  {!['title', 'author', 'categories', 'tags', 'date'].includes(field.name) &&
+                    !fieldRenderers[field.name] && (
+                      <CustomFieldCell postId={post.id} fieldName={field.name} />
+                    )}
+                </Fragment>
+              ))}
           </tr>
         ))}
       </tbody>

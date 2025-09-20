@@ -2,7 +2,7 @@ import React from 'react';
 
 const MenuSelect = ({ menus, menuId, setMenuId }) => {
   return (
-    <div className="mt-4 relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
+    <div className="mt-4 title-panel">
       <div className="flex flex-row items-center justify-start p-4">
         <p>Select a menu to edit </p>
         <select
@@ -12,7 +12,7 @@ const MenuSelect = ({ menus, menuId, setMenuId }) => {
           onChange={(e) => setMenuId(e.target.value)}
         >
           <option value="">Please select a menu...</option>
-          {menus.map((menu, idx) => (
+          {menus?.map((menu, idx) => (
             <option key={idx} value={menu.name}>
               {menu.name}
             </option>
@@ -24,7 +24,7 @@ const MenuSelect = ({ menus, menuId, setMenuId }) => {
             <button type="button" className="ml-2 text-blue-700 hover:text-blue-400">
               create a new menu
             </button>
-            <p>.</p>
+            <p className="mr-2">.</p>
           </>
         )}
         <p>Do not forget to save your changes.</p>

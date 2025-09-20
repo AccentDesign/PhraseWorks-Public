@@ -1,6 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
+import PreviewPost from '../../../Utils/PreviewPost';
+import DateTimePicker from '../../../../Utils/DateTimePicker';
 
-const Status = ({ submitDraft, submitPublish }) => {
+const Status = ({
+  submitDraft,
+  submitPublish,
+  submitScheduled,
+  content,
+  featuredImage,
+  title,
+  categories,
+  publishDateEdit,
+  setPublishDateEdit,
+  publishDate,
+  setPublishDate,
+}) => {
+  const [tmpPublishDate, setTmpPublishDate] = useState();
+  const formatPublishDate = (isoString) => {
+    if (!isoString) return null;
+
+    const d = new Date(isoString);
+
+    if (isNaN(d)) return null;
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
   return (
     <div className="panel">
       <h3 className="font-bold text-lg">Publish</h3>
@@ -9,9 +43,14 @@ const Status = ({ submitDraft, submitPublish }) => {
         <button type="button" className="secondary-btn" onClick={submitDraft}>
           Save Draft
         </button>
-        <button type="button" className="secondary-btn">
-          Preview
-        </button>
+        <PreviewPost
+          post={null}
+          content={content}
+          featuredImage={featuredImage}
+          title={title}
+          categories={categories}
+          type="post"
+        />
       </div>
       <div className="flex flex-col gap-2 items-start mt-4">
         <div className="flex flex-row items-center">
@@ -29,9 +68,6 @@ const Status = ({ submitDraft, submitPublish }) => {
           </svg>
           <p>
             Status: <strong>Draft</strong>{' '}
-            <button className="underline underline-offset-4 text-blue-800 hover:text-blue-600">
-              Edit
-            </button>
           </p>
         </div>
         <div className="flex flex-row items-center">
@@ -70,33 +106,88 @@ const Status = ({ submitDraft, submitPublish }) => {
             />
           </svg>
           <p>
-            Publish: <strong>immediately</strong>{' '}
-            <button className="underline underline-offset-4 text-blue-800 hover:text-blue-600">
+            Schedule: {publishDate ? formatPublishDate(publishDate) : <strong>immediately</strong>}{' '}
+            <button
+              className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
+              onClick={() => setPublishDateEdit(true)}
+            >
               Edit
             </button>
           </p>
         </div>
+        {publishDateEdit && (
+          <div className="flex flex-row items-center gap-4">
+            <DateTimePicker
+              key={`dp-${tmpPublishDate}`}
+              id="release-date"
+              date={tmpPublishDate}
+              updateFunction={setTmpPublishDate}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+            />
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => {
+                setPublishDateEdit(false);
+                setPublishDate(tmpPublishDate);
+              }}
+            >
+              Ok
+            </button>
+            <button
+              type="button"
+              className="underline underline-offset-4 text-blue-800 hover:text-blue-600"
+              onClick={() => setPublishDateEdit(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex flex-row justify-end">
-        <button
-          type="button"
-          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
-          onClick={submitPublish}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-5 mr-2"
+        {publishDate == '' ? (
+          <button
+            type="button"
+            className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
+            onClick={submitPublish}
           >
-            <path
-              fillRule="evenodd"
-              d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Publish
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-5 mr-2"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Publish
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
+            onClick={submitScheduled}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-5 mr-2"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Schedule
+          </button>
+        )}
       </div>
     </div>
   );

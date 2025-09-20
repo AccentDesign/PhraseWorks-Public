@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { get_post_by, get_post_categories, get_post_tags } from '../../../Utils/Posts';
+import { get_post_by, get_post_categories, get_post_tags } from '../../../Includes/Functions';
 import TitleBar from './Edit/TitleBar';
 import Title from './Edit/Title';
 import Content from './Edit/Content';
@@ -14,8 +14,16 @@ import { APIGetCategories, APIUpdatePost } from '../../../API/APIPosts';
 import { notify } from '../../../Utils/Notification';
 import Template from './Edit/Template';
 import { APIGetPageTemplates } from '../../../API/APIPageTemplates';
+import CustomFields from './Edit/CustomFields';
+import {
+  APIGetCustomFieldGroupsWhereMatch,
+  APIGetPostCustomFieldData,
+  APIUpdatePostCustomFieldData,
+} from '../../../API/APICustomFields';
+import SEO from './Edit/SEO';
+import Chevrons from '../Chevrons';
 
-const PostsEditPageContent = ({ id }) => {
+const PostsEditPageContent = ({ id, p }) => {
   const { loginPassword } = useContext(APIConnectorContext);
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
@@ -32,6 +40,11 @@ const PostsEditPageContent = ({ id }) => {
   const [tagsSelectedIds, setTagsSelectedIds] = useState([]);
   const [templateId, setTemplateId] = useState(-1);
   const [templates, setTemplates] = useState([]);
+  const [reloadMedia, setReloadMedia] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [fieldValues, setFieldValues] = useState({});
+  const [contentExpanded, setContentExpanded] = useState(true);
+  const [customExpanded, setCustomExpanded] = useState(false);
 
   const toggleCategoryCheckbox = (id) => {
     setCategoriesSelectedIds((prev) =>
@@ -60,7 +73,7 @@ const PostsEditPageContent = ({ id }) => {
   };
 
   const fetchImageData = async () => {
-    const data = await APIGetFileById(loginPassword, featuredImageId);
+    const data = await APIGetFileById(featuredImageId);
     if (data.status == 200) {
       setFeaturedImage(data.data.getMediaFileById);
     }
@@ -69,11 +82,16 @@ const PostsEditPageContent = ({ id }) => {
   const updatePost = async () => {
     const data = await APIUpdatePost(loginPassword, title, content, featuredImageId, post?.id);
     if (data.status == 200) {
-      notify('Successfully updated post.', 'success');
+      notify('Successfully updated page.', 'success');
+    } else {
+      notify('Failed to update page.', 'error');
       return;
     }
-
-    notify('Failed to update post.', 'error');
+    const formattedFields = Object.entries(fieldValues).map(([groupId, fields]) => ({
+      group_id: groupId,
+      fields: fields,
+    }));
+    const saveFields = await APIUpdatePostCustomFieldData(formattedFields, post?.id, loginPassword);
   };
 
   const fetchData = async () => {
@@ -85,19 +103,44 @@ const PostsEditPageContent = ({ id }) => {
     if (tagsData.status == 200) {
       setTags(tagsData.data.getCategories.categories);
     }
+
+    const groupsData = await APIGetCustomFieldGroupsWhereMatch(
+      'post_type',
+      'is_equal',
+      'page',
+      loginPassword,
+    );
+
+    if (groupsData.status == 200) {
+      const groupsParsed = JSON.parse(groupsData.data.getCustomFieldGroupsWhereMatch);
+      setGroups(groupsParsed);
+    }
+
+    const customFieldData = await APIGetPostCustomFieldData(id, loginPassword);
+    if (customFieldData.status == 200) {
+      const fieldsData = JSON.parse(customFieldData.data.getPostCustomFieldData);
+      const converted = fieldsData.reduce((acc, group) => {
+        acc[group.group_id] = group.fields;
+        return acc;
+      }, {});
+      setFieldValues(converted);
+    }
   };
 
   const fetchPostData = async () => {
-    const data = await get_post_by('id', id);
-    if (data != null) {
-      setPost(data);
-      setTitle(data.post_title);
-      setContent(data.post_content);
-      setFeaturedImageId(data.featured_image_id);
-      if (data.template_id !== null && data.template_id !== undefined) {
-        setTemplateId(data.template_id);
+    if (reloadPost) {
+      p = await get_post_by('id', id);
+    }
+    if (p?.post_title) {
+      setPost(p);
+      setTitle(p.post_title);
+      setContent(p.post_content);
+      setFeaturedImageId(p.featured_image_id);
+      if (p.template_id !== null && p.template_id !== undefined) {
+        setTemplateId(p.template_id);
       }
     }
+
     const categoryData = await get_post_categories(id);
     const categoriesTmp = [];
     for (const cat of categoryData) {
@@ -121,7 +164,7 @@ const PostsEditPageContent = ({ id }) => {
   useEffect(() => {
     fetchData();
     fetchPostData();
-  }, []);
+  }, [p]);
 
   useEffect(() => {
     if (featuredImageId != null) {
@@ -131,8 +174,8 @@ const PostsEditPageContent = ({ id }) => {
 
   useEffect(() => {
     if (reloadPost == true) {
-      setReloadPost(false);
       fetchPostData();
+      setReloadPost(false);
     }
   }, [reloadPost]);
 
@@ -141,19 +184,54 @@ const PostsEditPageContent = ({ id }) => {
       <div className="w-full md:w-3/4 md:mr-4">
         <TitleBar post={post} />
 
-        <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-white w-full mt-8 p-4">
+        <div className="panel mt-8">
           <Title title={title} updateTitle={updateTitle} />
-          <Content
-            activeContentTab={activeContentTab}
-            setActiveContentTab={setActiveContentTab}
-            content={content}
-            HandleContentEditorChange={HandleContentEditorChange}
-            HandleContentChange={HandleContentChange}
-          />
         </div>
+        <div className="panel-no-pad mt-8">
+          <div className="w-full bg-gray-200 p-4 flex flex-row items-center justify-between">
+            <p>Content</p>
+            <Chevrons expanded={contentExpanded} setValue={setContentExpanded} />
+          </div>
+          {contentExpanded && (
+            <div className="p-4">
+              <Content
+                activeContentTab={activeContentTab}
+                setActiveContentTab={setActiveContentTab}
+                content={content}
+                HandleContentEditorChange={HandleContentEditorChange}
+                HandleContentChange={HandleContentChange}
+              />
+            </div>
+          )}
+        </div>
+        <div className="panel-no-pad mt-8">
+          <div className="w-full bg-gray-200 p-4 flex flex-row items-center justify-between">
+            <p>Custom Fields</p>
+            <Chevrons expanded={customExpanded} setValue={setCustomExpanded} />
+          </div>
+          {customExpanded && (
+            <div className="p-4">
+              <CustomFields
+                post={post}
+                groups={groups}
+                fieldValues={fieldValues}
+                setFieldValues={setFieldValues}
+              />
+            </div>
+          )}
+        </div>
+        <SEO post={post} />
       </div>
       <div className="w-full md:w-1/4 md:ml-4">
-        <Status updatePost={updatePost} post={post} setReloadPost={setReloadPost} />
+        <Status
+          updatePost={updatePost}
+          post={post}
+          setReloadPost={setReloadPost}
+          content={content}
+          featuredImage={featuredImage}
+          title={title}
+          categories={categories}
+        />
         <Template
           templates={templates}
           postId={post?.id}
@@ -162,7 +240,12 @@ const PostsEditPageContent = ({ id }) => {
           setReloadPost={setReloadPost}
         />
 
-        <FeaturedImage featuredImage={featuredImage} setFeaturedImageId={setFeaturedImageId} />
+        <FeaturedImage
+          featuredImage={featuredImage}
+          setFeaturedImageId={setFeaturedImageId}
+          reloadMedia={reloadMedia}
+          setReloadMedia={setReloadMedia}
+        />
 
         <Category
           categories={categories}

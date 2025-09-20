@@ -1,0 +1,4 @@
+{
+  "exec": "node src/index.js",
+  "legacyWatch": true
+}

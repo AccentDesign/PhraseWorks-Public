@@ -195,3 +195,46 @@ export const APIGetAuthor = async (id) => {
     data: data.data,
   };
 };
+export const APIDeleteUser = async (loginPassword, id) => {
+  const query = `mutation {deleteUser(userId: ${id}) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APICreateUserNew = async (email, firstName, lastName, displayName, password) => {
+  const query = `mutation {
+    userCreate(input: { 
+      email: \"${email}\", 
+      first_name: \"${firstName}\", 
+      last_name: \"${lastName}\", 
+      display_name: \"${displayName}\"
+      password: \"${password}\"
+    }) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};

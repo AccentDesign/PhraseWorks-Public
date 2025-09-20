@@ -1,14 +1,15 @@
-import { Dialog, Transition } from '@headlessui/react';
-import { APIConnectorContext } from '../../../../Contexts/APIConnectorContext.jsx';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import React, { Fragment, useContext, useEffect, useState } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { APIConnectorContext } from '../../../../Contexts/APIConnectorContext';
 import { APIGetFiles } from '../../../../API/APIMedia';
 import MediaBoxView from './MediaBoxView';
-import MediaSearch from './MediaSearch.jsx';
-import MediaPagination from './MediaPagination.jsx';
+import MediaSearch from './MediaSearch';
+import MediaPagination from './MediaPagination';
+import MediaAdd from './MediaAdd';
 
-const FeaturedImage = ({ featuredImage, setFeaturedImageId }) => {
+const FeaturedImage = ({ featuredImage, setFeaturedImageId, reloadMedia, setReloadMedia }) => {
   const { loginPassword } = useContext(APIConnectorContext);
+  const [imageError, setImageError] = useState(false);
   const [sliderMediaOpen, setSliderMediaOpen] = useState(false);
   const [files, setFiles] = useState([]);
   const [type, setType] = useState('all');
@@ -26,7 +27,7 @@ const FeaturedImage = ({ featuredImage, setFeaturedImageId }) => {
       const tmpFiles = [];
       setTotalFiles(data.data.getMediaFiles.total);
       data.data.getMediaFiles.files.map((file) => {
-        const url = `http://localhost:8787/r2/${file.filename}`;
+        const url = `http://localhost/uploads/${file.filename}`;
         const newData = {
           id: file.id,
           filename: file.filename,
@@ -47,25 +48,50 @@ const FeaturedImage = ({ featuredImage, setFeaturedImageId }) => {
   }, [page, type, search]);
 
   useEffect(() => {
+    if (reloadMedia == true) {
+      setReloadMedia(false);
+      fetchData();
+    }
+  }, [reloadMedia]);
+
+  useEffect(() => {
     if (featuredImage != null) {
-      const thumb =
-        featuredImage?.attachment_metadata?.sizes?.find((item) => item.slug === 'thumbnail')
-          ?.file || featuredImage?.filename;
+      const thumb = featuredImage?.filename;
       setThumbnail(thumb);
     }
   }, [featuredImage]);
+
+  const renderFallbackSVG = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="w-[50%]"
+    >
+      <path
+        fillRule="evenodd"
+        d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
 
   return (
     <>
       <div className="panel mt-8">
         <h3 className="font-bold text-lg">Featured Image</h3>
         <hr className="my-4" />
-        {featuredImage != null && (
+        {featuredImage != null && !imageError ? (
           <img
-            src={`http://localhost:8787/r2/${thumbnail}`}
+            src={`http://localhost/uploads/${thumbnail}`}
             className="w-full h-auto object-cover"
             alt={featuredImage?.post_title || featuredImage?.filename}
+            onError={() => setImageError(true)}
           />
+        ) : (
+          <div className="text-gray-300 w-full flex justify-center items-center">
+            {renderFallbackSVG()}
+          </div>
         )}
 
         <div className="flex flex-row justify-start">
@@ -91,12 +117,12 @@ const FeaturedImage = ({ featuredImage, setFeaturedImageId }) => {
         </div>
       </div>
       <Transition.Root show={sliderMediaOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-30" onClose={HandleClose}>
+        <Dialog as="div" className="slide-panel" onClose={HandleClose}>
           <div className="fixed inset-0" />
 
-          <div className="fixed inset-0 overflow-hidden">
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+          <div className="slide-panel-content-wrapper">
+            <div className="slide-panel-content">
+              <div className="slide-panel-content-inner">
                 <Transition.Child
                   as={Fragment}
                   enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -130,12 +156,29 @@ const FeaturedImage = ({ featuredImage, setFeaturedImageId }) => {
                                   >
                                     <span className="absolute -inset-2.5" />
                                     <span className="sr-only">Close panel</span>
-                                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth="1.5"
+                                      stroke="currentColor"
+                                      className="h-6 w-6"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 18 18 6M6 6l12 12"
+                                      />
+                                    </svg>
                                   </button>
                                 </div>
                               </div>
                               <div className="mt-4">
                                 <MediaSearch search={search} setSearch={setSearch} />
+                                <MediaAdd
+                                  reloadMedia={reloadMedia}
+                                  setReloadMedia={setReloadMedia}
+                                />
                                 <div className="panel mt-8">
                                   <MediaBoxView
                                     files={files}

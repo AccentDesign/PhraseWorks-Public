@@ -1,8 +1,15 @@
-import { WorkerMailer } from 'worker-mailer';
+import nodemailer from 'nodemailer';
+import { doAction } from '../utils/actionBus.js';
+import System from './system.js';
 
 export default class Email {
   constructor() {}
   static async getMailer(connection, env) {
+    const override = await doAction('get_mailer', connection, env);
+    if (override && (!Array.isArray(override) || override.length > 0)) {
+      return override;
+    }
+
     const emailSettings = await connection`
       SELECT option_value FROM pw_options WHERE option_name = 'email_settings'
     `;
@@ -26,18 +33,26 @@ export default class Email {
       return null;
     }
 
-    const mailer = await WorkerMailer.connect({
-      credentials: {
-        username: settings.SMTP_USERNAME,
-        password: settings.SMTP_PASSWORD,
-      },
-      authType: settings.SMTP_AUTHTYPE,
+    const transporter = nodemailer.createTransport({
       host: settings.SMTP_HOST,
       port: settings.SMTP_PORT,
       secure: settings.SMTP_SECURE,
-      startTls: true,
-      logLevel: 0,
+      auth: {
+        user: settings.SMTP_USERNAME,
+        pass: settings.SMTP_PASSWORD,
+      },
+      authMethod: settings.SMTP_AUTHTYPE,
+      logger: false,
+      debug: false,
     });
-    return mailer;
+
+    try {
+      await transporter.verify();
+      return transporter;
+    } catch (err) {
+      await System.writeLogData(err.stack || String(err), 'backend');
+      console.error('Mailer connection failed:', err);
+      return null;
+    }
   }
 }

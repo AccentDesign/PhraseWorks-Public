@@ -1,6 +1,7 @@
 import React from 'react';
+import PreviewPage from '../../../Utils/PreviewPage';
 
-const Status = ({ submitDraft, submitPublish }) => {
+const Status = ({ submitDraft, submitPublish, content, featuredImage, title, categories }) => {
   return (
     <div className="panel">
       <h3 className="font-bold text-lg">Publish</h3>
@@ -9,9 +10,14 @@ const Status = ({ submitDraft, submitPublish }) => {
         <button type="button" className="secondary-btn" onClick={submitDraft}>
           Save Draft
         </button>
-        <button type="button" className="secondary-btn">
-          Preview
-        </button>
+        <PreviewPage
+          post={null}
+          content={content}
+          featuredImage={featuredImage}
+          title={title}
+          categories={categories}
+          type="page"
+        />
       </div>
       <div className="flex flex-col gap-2 items-start mt-4">
         <div className="flex flex-row items-center">
@@ -80,7 +86,7 @@ const Status = ({ submitDraft, submitPublish }) => {
       <div className="flex flex-row justify-end">
         <button
           type="button"
-          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+          className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
           onClick={submitPublish}
         >
           <svg

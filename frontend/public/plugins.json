@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Accordions Plugin",
+    "src": ""
+  },
+  {
+    "name": "Admin Columns",
+    "src": "/plugins/AdminColumnsPlugin/plugin-bundle.js"
+  },
+  {
+    "name": "Cookie Consent",
+    "src": ""
+  },
+  {
+    "name": "Google Fonts Plugin",
+    "src": ""
+  },
+  {
+    "name": "PW SMTP",
+    "src": ""
+  },
+  {
+    "name": "S3 Uploads Plugin",
+    "src": ""
+  },
+  {
+    "name": "Test Plugin",
+    "src": ""
+  },
+  {
+    "name": "Zero G Forms",
+    "src": ""
+  }
+]

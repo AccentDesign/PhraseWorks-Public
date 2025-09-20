@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import TitleBar from '../Users/Dashboard/TitleBar';
 import Filter from './Dashboard/Filter';
 import { APIConnectorContext } from '../../../Contexts/APIConnectorContext.jsx';
-import { APIAllGetUsers } from '../../../API/APIUsers.js';
+import { APIAllGetUsers, APIDeleteUser } from '../../../API/APIUsers.js';
 import ListView from './Dashboard/ListView.jsx';
 import Pagination from './Dashboard/Pagination.jsx';
 
@@ -15,6 +15,7 @@ const UsersPageContent = () => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [reloadUsers, setReloadUsers] = useState(false);
 
   const toggleCheckbox = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
@@ -30,6 +31,15 @@ const UsersPageContent = () => {
 
   const allSelected = users.length > 0 && selectedIds.length === users.length;
 
+  const permanentDelete = async (id) => {
+    const data = await APIDeleteUser(loginPassword, id);
+    if (data.status == 200) {
+      if (data.data.deleteUser.success) {
+        setReloadUsers(true);
+      }
+    }
+  };
+
   const fetchData = async () => {
     const data = await APIAllGetUsers(loginPassword, page, perPage);
     if (data.status == 200) {
@@ -41,6 +51,13 @@ const UsersPageContent = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (reloadUsers) {
+      setReloadUsers(false);
+      fetchData();
+    }
+  }, [reloadUsers]);
 
   return (
     <>
@@ -62,6 +79,7 @@ const UsersPageContent = () => {
             toggleCheckbox={toggleCheckbox}
             allSelected={allSelected}
             toggleAllCheckboxes={toggleAllCheckboxes}
+            permanentDelete={permanentDelete}
           />
           <Pagination totalUsers={totalUsers} page={page} perPage={perPage} setPage={setPage} />
         </div>

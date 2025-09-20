@@ -2,7 +2,7 @@ import React from 'react';
 
 const Filter = ({ setFilter, totalPages, filter, pages, user }) => {
   return (
-    <div className="flex flex-row gap-4 mt-4">
+    <div className="filter-panel">
       <button
         type="button"
         onClick={() => setFilter('all')}

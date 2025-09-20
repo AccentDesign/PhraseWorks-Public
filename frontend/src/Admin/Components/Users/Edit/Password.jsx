@@ -15,7 +15,7 @@ const Password = ({
 
   return (
     <>
-      <div className="w-full flex flex-row items-center">
+      <div className="w-full flex-center">
         <input
           type={hide ? 'password' : 'text'}
           name="password"
@@ -23,7 +23,7 @@ const Password = ({
           placeholder="Password"
           autoComplete="Current Password"
           value={password}
-          className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
+          className="input"
           required=""
           onChange={(e) => {
             setPassword(e.target.value);

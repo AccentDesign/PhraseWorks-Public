@@ -21,8 +21,6 @@ const SortableItem = ({ item, children, className }) => {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} className={className}>
-      {/* Only apply drag listeners to a small handle element */}
-
       <div className="flex-1">
         {typeof children === 'function' ? children({ listeners, attributes }) : children}
       </div>

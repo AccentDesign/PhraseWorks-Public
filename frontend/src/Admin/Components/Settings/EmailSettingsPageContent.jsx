@@ -95,7 +95,7 @@ const EmailSettingsPageContent = () => {
           <label className="block">SMTP Authtype</label>
           <select
             id="smtp_authtype"
-            className="bg-gray-100 border-gray-300 border px-4 py-2 divide-y divide-gray-100 rounded shadow w-full md:w-1/2 mb-4"
+            className="select mb-4"
             value={sMTP_AUTHTYPE}
             onChange={(e) => setSMTP_AUTHTYPE(e.target.value)}
           >
@@ -122,7 +122,7 @@ const EmailSettingsPageContent = () => {
               type="checkbox"
               checked={sMTP_SECURE}
               onChange={(e) => setSMTP_SECURE(e.target.checked)}
-              className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 focus:ring-2"
+              className="checkbox mt-1"
             />
             <div className="ml-2">
               <label htmlFor="default-checkbox" className="text-sm text-gray-700">
@@ -133,7 +133,7 @@ const EmailSettingsPageContent = () => {
           <div className="flex flex-row justify-end mt-8">
             <button
               type="button"
-              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+              className="text-white bg-blue-700 hover:bg-blue-800 btn"
               onClick={submitUpdate}
             >
               <svg
@@ -157,7 +157,7 @@ const EmailSettingsPageContent = () => {
           <div className="flex flex-row justify-end mt-8">
             <button
               type="button"
-              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-gray-500 hover:bg-gray-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+              className="text-white bg-gray-500 hover:bg-gray-800 btn"
               onClick={sendTest}
             >
               <svg

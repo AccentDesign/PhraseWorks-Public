@@ -43,12 +43,12 @@ const Settings = () => {
     });
   };
 
-  const updateHeight = (idx, width) => {
+  const updateHeight = (idx, height) => {
     setSettings((prevSettings) => {
       const newSettings = [...prevSettings];
       newSettings[idx] = {
         ...newSettings[idx],
-        width,
+        height,
       };
       return newSettings;
     });
@@ -81,11 +81,11 @@ const Settings = () => {
   }, []);
 
   return (
-    <div className="relative bg-white shadow-md dark:bg-gray-800 sm:rounded-lg mt-4">
-      <div className="flex flex-col items-start justify-start p-4 space-y-3 md:flex-col md:space-y-4">
+    <div className="panel mt-8">
+      <div className="media-settings">
         {settings.map((setting, idx) => (
           <div key={idx} className="w-full">
-            <div className="flex flex-row justify-between">
+            <div className="flex-row-between">
               <h2 className="m-0 text-2xl">Setting: {setting.title}</h2>
               <button
                 onClick={() => deleteSetting(idx)}
@@ -95,7 +95,7 @@ const Settings = () => {
               </button>
             </div>
 
-            <div className="mb-4 flex flex-row justify-between gap-4">
+            <div className="mb-4 flex-row-between gap-4">
               <div className="w-1/2">
                 <label>Title</label>
                 <input
@@ -104,7 +104,7 @@ const Settings = () => {
                   placeholder="Title"
                   autoComplete="Title"
                   value={setting.title}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
+                  className="input"
                   required
                   onChange={(e) => {
                     updateTitle(idx, e.target.value);
@@ -120,7 +120,7 @@ const Settings = () => {
                   autoComplete="Slug"
                   disabled
                   value={setting.slug}
-                  className="cursor-not-allowed bg-gray-100 border border-gray-300 text-gray-400 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5"
+                  className="input-disallowed"
                 />
               </div>
             </div>
@@ -161,7 +161,7 @@ const Settings = () => {
         <div className="flex flex-row items-center gap-4">
           <button
             type="button"
-            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-800 rounded-lg bg-gray-300 hover:bg-gray-400 hover:text-white focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+            className="text-gray-600 bg-gray-300 hover:bg-gray-400 hover:text-white btn"
             onClick={() => {
               AddEntry();
             }}
@@ -183,7 +183,7 @@ const Settings = () => {
           </button>
           <button
             type="button"
-            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+            className="text-white bg-blue-700 hover:bg-blue-800 btn"
             onClick={() => {
               updateSettings(true);
             }}

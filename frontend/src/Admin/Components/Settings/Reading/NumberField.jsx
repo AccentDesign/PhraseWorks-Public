@@ -12,7 +12,7 @@ const NumberField = ({ name, title, value, updateFunction, text }) => {
           autoComplete={title}
           value={value}
           min={0}
-          className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-auto p-2.5"
+          className="input"
           required
           onChange={(e) => {
             updateFunction(e.target.value);

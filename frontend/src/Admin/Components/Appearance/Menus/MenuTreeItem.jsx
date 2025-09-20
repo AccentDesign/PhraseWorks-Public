@@ -65,7 +65,11 @@ const MenuTreeItem = ({
             }}
           >
             <div className="w-full flex flex-row justify-between items-center">
-              <p>{item.title}</p>
+              <p>{item.label || item.title}</p>
+              {/* Debug info */}
+              <small style={{fontSize: '10px', color: 'gray'}}>
+                label: {item.label || 'none'} | title: {item.title}
+              </small>
               <div className="flex flex-row items-center">
                 <button
                   onClick={() => removeItem(item.id)}
@@ -122,7 +126,7 @@ const MenuTreeItem = ({
                 <input
                   type="text"
                   name="title"
-                  value={item.label}
+                  value={item.label || item.title || ''}
                   onChange={(e) => handleInputChange(item.id, 'label', e.target.value)}
                   className="w-full p-2 border rounded"
                 />
@@ -130,7 +134,7 @@ const MenuTreeItem = ({
                 <input
                   type="text"
                   name="href"
-                  value={item.url}
+                  value={item.url || ''}
                   onChange={(e) => handleInputChange(item.id, 'url', e.target.value)}
                   className="w-full p-2 border rounded"
                 />

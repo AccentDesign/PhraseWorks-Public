@@ -1,10 +1,7 @@
-import Post from './post';
+import Post from './post.js';
 import WordpressHash from 'wordpress-hash-node';
 import crypto from 'crypto';
-import { Resend } from 'resend';
-import Email from './email';
-
-const resend = new Resend('re_akVmyiPX_7maBXSZYqVqvuymF1Yd3T1uB');
+import Email from './email.js';
 
 export default class User {
   constructor(id, user_login, user_nicename, user_email, user_url, user_status, display_name) {
@@ -22,7 +19,7 @@ export default class User {
     return rows;
   }
 
-  static async fetch(args, connection) {
+  static async fetch(args, connection, loaders) {
     const limitArg = args.find((arg) => arg.type === 'limit');
     const limit = limitArg?.value ?? 10;
 
@@ -46,8 +43,8 @@ export default class User {
     await Promise.all(
       rows.map(async (row) => {
         row.user_role = roles.find((role) => role.id == row.user_role);
-        const posts = await Post.fetchAllByAuthor(connection, 'post', row.id);
-        row.post_count = posts.length;
+        const posts = await loaders.postsByAuthor.load(row.id);
+        row.post_count = posts != null ? posts.length : 0;
       }),
     );
 
@@ -73,6 +70,20 @@ export default class User {
       return [];
     }
 
+    const role =
+      await connection`SELECT * FROM pw_usermeta WHERE user_id=${rows[0].id} AND meta_key='pw_user_role'`;
+
+    const roles = await User.getRoles(connection);
+
+    const roleId = parseInt(role[0].meta_value);
+    const matchingRole = roles.find((r) => r.id === roleId);
+
+    if (matchingRole) {
+      rows[0].user_role = matchingRole;
+    } else {
+      rows[0].user_role = null; // fallback if not found
+    }
+
     return rows[0];
   }
 
@@ -85,8 +96,8 @@ export default class User {
     return roles;
   }
 
-  static async getUserBy(field, value, connection) {
-    const allowedFields = ['id', 'post_name', 'post_title', 'post_author'];
+  static async getUserBy(field, value, connection, loaders) {
+    const allowedFields = ['id', 'user_login', 'user_email', 'user_nicename'];
     if (!allowedFields.includes(field)) {
       throw new Error('Invalid field parameter');
     }
@@ -107,8 +118,8 @@ export default class User {
       await Promise.all(
         user.map(async (row) => {
           row.user_role = roles.find((role) => role.id == row.user_role);
-          const posts = await Post.fetchAllByAuthor(connection, 'post', row.id);
-          row.post_count = posts.length;
+          const posts = await loaders.postsByAuthor.load(row.id);
+          row.post_count = posts != null ? posts.length : 0;
           row.user_registered = row.user_registered.toISOString();
         }),
       );
@@ -216,9 +227,9 @@ export default class User {
       const hashedKey = await User.generateRPKey(id, connection);
       const mailer = await Email.getMailer(connection, env);
       if (mailer != null) {
-        await mailer.send({
-          from: { name: 'noReply', email: 'noReply@agencyexpress.net' },
-          to: { email: user[0].user_email },
+        await mailer.sendMail({
+          from: { name: env.DEFAULT_FROM_NAME || 'PhraseWorks', email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+          to: user[0].user_email,
           subject: `${env.SITE_NAME} Password Reset`,
           text: 'This is a plain text message from PhraseWorks, testing the smtp settings.',
           html: `
@@ -235,7 +246,7 @@ export default class User {
           <p>To set your password, visit the following address:</p>
           
           <p>
-            <a href="http://localhost:5173/login?action=rp&key=${hashedKey}&login=${userLogin}"
+            <a href="${window.location.origin.replace('5173', '8787')}/login?action=rp&key=${hashedKey}&login=${userLogin}"
               style="background-color: #0073aa; color: #fff; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
               Set Your Password
             </a>
@@ -303,13 +314,13 @@ export default class User {
 
     const mailer = await Email.getMailer(connection, env);
     if (mailer != null) {
-      await mailer.send({
-        from: { name: 'noReply', email: 'noReply@agencyexpress.net' },
-        to: { email: user[0].user_email },
+      await mailer.sendMail({
+        from: { name: env.DEFAULT_FROM_NAME || 'PhraseWorks', email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+        to: user[0].user_email,
         subject: `${env.SITE_NAME} Password Reset`,
         text: 'This is a plain text message from PhraseWorks, testing the smtp settings.',
         html: `
-        <img src="https://pub-1e2f36fe29994319a65d0ca6beca0f46.r2.dev/pw.svg" alt="hello" />
+        <img src="${env.R2_PUBLIC_URL}pw.svg" alt="${env.SITE_NAME}" />
         <h2>Password Reset Request</h2>
 
         <p>Someone has requested a password reset for the following account:</p>

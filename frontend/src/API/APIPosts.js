@@ -36,6 +36,25 @@ export const APIAllGetPosts = async (loginPassword, page, perPage, type) => {
   };
 };
 
+export const APIAllGetPostsSearch = async (loginPassword, search, page, perPage, type) => {
+  const query = `query {getPostsSearch(search: \"${search}\", page: ${page}, perPage: ${perPage}, type: \"${type}\") { posts { id post_date post_date_gmt post_content post_title post_excerpt post_status post_password post_name post_modified post_modified_gmt post_parent guid menu_order post_type post_mime_type comment_count post_author author { id user_login user_nicename user_email user_url user_registered user_activation_key user_status display_name first_name last_name } } total } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
 export const APIAllGetPostsByType = async (page, perPage, type) => {
   const query = `query {getPostsByType(page: ${page}, perPage: ${perPage}, type: \"${type}\") { posts { id post_date post_date_gmt post_content post_title post_excerpt post_status post_password post_name post_modified post_modified_gmt post_parent guid menu_order post_type post_mime_type comment_count post_author author { id user_login user_nicename user_email user_url user_registered user_activation_key user_status display_name first_name last_name } featured_image_id featured_image_metadata categories { term_id name slug description } } total } }`;
   const url = `${graphqlUrl}graphql`;
@@ -61,7 +80,6 @@ export const APIGetPosts = async (loginPassword, page, perPage, type) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${loginPassword}`,
     },
     body: JSON.stringify({ query: query }),
   });
@@ -231,10 +249,67 @@ export const APISaveDraftNewPost = async (
   featuredImageId,
   categoriesSelectedIds,
   tagsSelectedIds,
+  postType,
 ) => {
   const categories = JSON.stringify(JSON.stringify(categoriesSelectedIds));
   const tags = JSON.stringify(JSON.stringify(tagsSelectedIds));
-  const query = `mutation {createDraftNewPost(title: \"${title}\" content: """${content}""", featuredImageId: ${featuredImageId}, categories: ${categories}, tags: ${tags}) { success error post_id} }`;
+  const query = `mutation {createDraftNewPost(title: \"${title}\" content: """${content}""", featuredImageId: ${featuredImageId}, categories: ${categories}, tags: ${tags}, postType: \"${postType}\") { success error post_id} }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APISaveScheduledNewPost = async (
+  loginPassword,
+  title,
+  content,
+  featuredImageId,
+  categoriesSelectedIds,
+  tagsSelectedIds,
+  postType,
+  publishDate,
+) => {
+  const categories = JSON.stringify(JSON.stringify(categoriesSelectedIds));
+  const tags = JSON.stringify(JSON.stringify(tagsSelectedIds));
+
+  const publishDatePart = publishDate && publishDate !== '' ? `publishDate: "${publishDate}"` : '';
+
+  const mutationFields = [
+    `title: "${title}"`,
+    `content: """${content}"""`,
+    `featuredImageId: ${featuredImageId}`,
+    `categories: ${categories}`,
+    `tags: ${tags}`,
+    `postType: "${postType}"`,
+    publishDatePart,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const query = `
+    mutation {
+      createScheduledNewPost(
+        ${mutationFields}
+      ) {
+        success
+        error
+        post_id
+      }
+    }
+  `;
+
   const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
@@ -259,10 +334,11 @@ export const APISavePublishNewPost = async (
   featuredImageId,
   categoriesSelectedIds,
   tagsSelectedIds,
+  postType,
 ) => {
   const categories = JSON.stringify(JSON.stringify(categoriesSelectedIds));
   const tags = JSON.stringify(JSON.stringify(tagsSelectedIds));
-  const query = `mutation {createPublishNewPost(title: \"${title}\" content: """${content}""", featuredImageId: ${featuredImageId}, categories: ${categories}, tags: ${tags}) { success error post_id} }`;
+  const query = `mutation {createPublishNewPost(title: \"${title}\" content: """${content}""", featuredImageId: ${featuredImageId}, categories: ${categories}, tags: ${tags}, postType: \"${postType}\") { success error post_id} }`;
   const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
@@ -281,7 +357,7 @@ export const APISavePublishNewPost = async (
 };
 
 export const APIGetPostBy = async (field, value) => {
-  const query = `query {getPostBy(field: \"${field}\", value: \"${value}\") { id post_date post_date_gmt post_content post_title post_excerpt post_status post_password post_name post_modified post_modified_gmt post_parent guid menu_order post_type post_mime_type comment_count post_author author { id user_login user_nicename user_email user_url user_registered user_activation_key user_status display_name first_name last_name } featured_image_id featured_image_metadata template_id categories { term_id name slug description } } }`;
+  const query = `query {getPostBy(field: \"${field}\", value: \"${value}\") { id post_date post_date_gmt post_content post_title post_excerpt post_status post_password post_name post_modified post_modified_gmt post_parent guid menu_order post_type post_mime_type comment_count post_author author { id user_login user_nicename user_email user_url user_registered user_activation_key user_status display_name first_name last_name } featured_image_id featured_image_metadata featured_image_imagedata template_id categories { term_id name slug description } } }`;
   const url = `${graphqlUrl}graphql`;
   const response = await fetch(url, {
     method: 'POST',
@@ -457,7 +533,6 @@ export const APIGetTags = async (loginPassword, tag) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${loginPassword}`,
     },
     body: JSON.stringify({ query: query }),
   });
@@ -573,6 +648,222 @@ export const APISavePublishNewPage = async (
       Authorization: `Bearer ${loginPassword}`,
     },
     body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIDeletePost = async (loginPassword, postId) => {
+  const query = `mutation {deletePost(postId: ${postId}) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPostSEO = async (postId) => {
+  const query = `query {getPostSEO(postId: ${postId})}`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIUpdatePostSEO = async (loginPassword, seo, postId) => {
+  const query = `mutation {updatePostSEO(seo: ${JSON.stringify(
+    JSON.stringify(seo),
+  )}, postId: ${postId}) { success error } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPostTableFields = async (loginPassword, postType) => {
+  const query = `query { getPostTableFields(postType: \"${postType}\") { fields { name title order } } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${loginPassword}`,
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIGetPostComments = async (postId) => {
+  const query = `query { getPostComments(postId: ${postId}) { comments { comment_id comment_post_id comment_author_name comment_date comment_content comment_parent user_id } } }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIAddNewPostComment = async (postId, comment) => {
+  const commentString = JSON.stringify(comment);
+  const query = `mutation {
+    addNewPostComment(postId: ${postId}, comment: ${JSON.stringify(commentString)}) {
+      success
+    }
+  }`;
+  const url = `${graphqlUrl}graphql`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+
+  const data = await response.json();
+  return {
+    status: response.status,
+    data: data.data,
+  };
+};
+
+export const APIPWQuery = async (args, loginPassword) => {
+  const query = `query {
+    getPWQuery(args: ${JSON.stringify(JSON.stringify(args))}) {
+      posts {
+        id
+        post_author
+        post_date
+        post_date_gmt
+        post_content
+        post_title
+        post_excerpt
+        post_status
+        comment_status
+        ping_status
+        post_password
+        post_name
+        to_ping
+        pinged
+        post_modified
+        post_modified_gmt
+        post_content_filtered
+        post_parent
+        guid
+        menu_order
+        post_type
+        post_mime_type
+        comment_count
+        featured_image_id 
+        featured_image_metadata 
+        featured_image_imagedata
+
+        author {
+          id
+          user_login
+          user_nicename
+          user_email
+          user_url
+          user_registered
+          user_activation_key
+          user_status
+          display_name
+          first_name
+          last_name
+        }
+
+        meta {
+          meta_id
+          meta_key
+          meta_value
+        }
+
+        terms {
+          term_id
+          name
+          slug
+          taxonomy
+          description
+          parent
+          count
+        }
+
+        comments {
+          comment_id
+          comment_post_id
+          comment_author
+          comment_author_email
+          comment_author_url
+          comment_author_ip
+          comment_date
+          comment_date_gmt
+          comment_content
+          comment_approved
+          comment_parent
+          user_id
+        }
+      }
+      total
+    }
+  }`;
+
+  const url = `${graphqlUrl}graphql`;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (loginPassword) {
+    headers.Authorization = `Bearer ${loginPassword}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query }),
   });
 
   const data = await response.json();

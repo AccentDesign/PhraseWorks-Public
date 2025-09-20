@@ -1,5 +1,4 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import React, { Fragment, useState } from 'react';
 
 const Upload = ({
@@ -40,12 +39,12 @@ const Upload = ({
 
   return (
     <Transition.Root show={sliderOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-30" onClose={HandleClose}>
+      <Dialog as="div" className="slide-panel" onClose={HandleClose}>
         <div className="fixed inset-0" />
 
-        <div className="fixed inset-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+        <div className="slide-panel-content-wrapper">
+          <div className="slide-panel-content">
+            <div className="slide-panel-content-inner">
               <Transition.Child
                 as={Fragment}
                 enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -79,7 +78,20 @@ const Upload = ({
                                 >
                                   <span className="absolute -inset-2.5" />
                                   <span className="sr-only">Close panel</span>
-                                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.5"
+                                    stroke="currentColor"
+                                    className="h-6 w-6"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M6 18 18 6M6 6l12 12"
+                                    />
+                                  </svg>
                                 </button>
                               </div>
                             </div>
@@ -91,14 +103,9 @@ const Upload = ({
                               onDragOver={handleDragOver}
                               onDragLeave={handleDragLeave}
                             >
-                              <input
-                                type="file"
-                                multiple
-                                ref={fileInputRef}
-                                onChange={handleChange}
-                              />
+                              <input type="file" ref={fileInputRef} onChange={handleChange} />
                               <button
-                                className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+                                className="ml-4 flex items-center justify-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-primary-300 focus:outline-none"
                                 type="submit"
                                 onClick={async () => {
                                   await SendData();

@@ -1,78 +1,176 @@
-import React, { useContext, useEffect, useState } from 'react';
-import HeaderMenu from './HeaderMenu';
+import React, { useState, useContext, useEffect } from 'react';
 import { UserContext } from '../../../Contexts/UserContext';
-import { FaUser, FaPowerOff } from 'react-icons/fa';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { get_menu_by_name } from '../../../Utils/System';
+import { get_menu_by_name } from '@/Includes/Functions';
 
 const Header = () => {
   const { user, LogoutUser } = useContext(UserContext);
-  const [mobileExpanded, setMobileExpanded] = useState(false);
-  const location = useLocation();
-  const { pathname } = useLocation();
-  const currentPath = location.pathname;
-  const [menu, setMenu] = useState([]);
 
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [navLinks, setNavLinks] = useState([]);
+
+  const hasSpecialRole = ['administrator', 'editor', 'contributor'].includes(user?.user_role?.role);
 
   const fetchMenu = async () => {
     const menuData = await get_menu_by_name('Test');
-    setMenu({ name: menuData.name, data: JSON.parse(menuData.menuData) });
+    const data = JSON.parse(menuData.menuData);
+    data.unshift({
+      id: '0',
+      label: 'home',
+      parentId: null,
+      postId: null,
+      title: 'Home',
+      type: 'page',
+      url: '/',
+    });
+    setNavLinks({ name: menuData.name, data: data });
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      setScreenWidth(window.innerWidth);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
+
     fetchMenu();
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <>
-      <div className="z-[999] bg-dark-teal border-gray-200 mb-4 w-full hidden lg:block fixed top-0">
-        <div className="w-full md:w-[calc(100%-12rem)] mx-auto mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center">
-              <a href="/">
-                <img
-                  src="/images/pw.svg"
-                  width="100"
-                  height="82"
-                  srcSet="/images/pw.svg 1x, /images/pw.svg 2x"
-                  className="max-w-[100px]"
-                  alt="Logo Image"
-                  loading="lazy"
-                />
-              </a>
-            </div>
+    <div className={`mb-[40px]`}>
+      <nav
+        className={`fixed top-0 left-0 bg-menu-primary w-full flex items-center justify-between px-4 md:px-16 lg:px-24 xl:px-32 transition-all duration-500 z-50 ${
+          isScrolled
+            ? 'bg-white/80 shadow-md text-gray-700 backdrop-blur-lg py-3 md:py-4'
+            : 'py-4 md:py-6'
+        }
+        ${hasSpecialRole ? 'top-[40px]' : 'top-0'}`}
+      >
+        <a href="/" className="flex items-center gap-2">
+          <img
+            src="/images/pw-full-whitetext.svg"
+            className={`w-[220px] transition-all duration-500 ${isScrolled ? 'invert' : ''}`}
+            alt="Logo Image"
+            loading="lazy"
+          />
+        </a>
 
-            {menu && <HeaderMenu menu={menu} />}
-            {user && (
-              <div className="avatar text-white rounded-wrapper-white-25 flex flex-row items-center border border-1 border-gray-500/50 rounded-full">
-                <span className="link-special text-white flex items-center justify-center w-6 h-6 rounded-full bg-gray-500/50 mr-2">
-                  <FaUser />
-                </span>
-                <span className="avatar-name mr-h">
-                  {user.first_name} {user.last_name}
-                </span>
+        <div className="hidden md:flex items-center gap-4 lg:gap-8">
+          {navLinks?.data?.map((link, i) => {
+            if (link.parentId == 'menuZone' || link.parentId == null)
+              return (
                 <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    LogoutUser();
-                  }}
-                  aria-label="Power Off"
-                  className="cursor-pointer link-special text-dark-teal bg-white ml-2 w-6 h-6 flex items-center justify-center rounded-full"
+                  key={i}
+                  href={link.url}
+                  className={`group flex flex-col gap-0.5 ${
+                    isScrolled ? 'text-gray-700' : 'text-white'
+                  }`}
                 >
-                  <FaPowerOff />
+                  {link.title}
+                  <div
+                    className={`${
+                      isScrolled ? 'bg-gray-700' : 'bg-white'
+                    } h-0.5 w-0 group-hover:w-full transition-all duration-300`}
+                  />
                 </a>
-              </div>
-            )}
-          </div>
+              );
+          })}
         </div>
-      </div>
-    </>
+
+        <div className="hidden md:flex items-center gap-4">
+          {user ? (
+            <button
+              className={`px-8 py-2.5 rounded-full ml-4 transition-all duration-500 ${
+                isScrolled ? 'text-white bg-black' : 'bg-white text-black'
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                LogoutUser();
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <a
+              href="/login"
+              className={`px-8 py-2.5 rounded-full ml-4 transition-all duration-500 ${
+                isScrolled ? 'text-white bg-black' : 'bg-white text-black'
+              }`}
+            >
+              Login
+            </a>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 md:hidden text-white">
+          <svg
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`h-6 w-6 cursor-pointer ${isScrolled ? 'invert' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+        </div>
+
+        <div
+          className={`fixed top-0 left-0 w-full h-screen bg-white text-base flex flex-col md:hidden items-start justify-start pt-10 px-8 gap-6 font-medium text-gray-800 transition-all duration-500 ${
+            isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } 
+          ${isScrolled ? 'top-0' : hasSpecialRole ? 'top-[40px]' : 'top-0'}
+          `}
+        >
+          <button className="absolute top-4 right-4" onClick={() => setIsMenuOpen(false)}>
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+
+          {navLinks?.data?.map((link, i) => (
+            <a
+              key={i}
+              href={link.url}
+              onClick={() => setIsMenuOpen(false)}
+              className={`${link.parentId != null && link.parentId != 'menuZone' && 'pl-4'}`}
+            >
+              {link.parentId != null && link.parentId != 'menuZone' && '- '}
+              {link.title}
+            </a>
+          ))}
+          {user ? (
+            <button
+              className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
+              onClick={(e) => {
+                e.preventDefault();
+                LogoutUser();
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <a
+              href="/login"
+              className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
+            >
+              Login
+            </a>
+          )}
+        </div>
+      </nav>
+    </div>
   );
 };
 

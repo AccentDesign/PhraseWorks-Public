@@ -2,14 +2,11 @@ import React from 'react';
 
 const Loading = () => {
   return (
-    <div
-      role="status"
-      className="fixed inset-0 bg-signmaster flex items-center justify-center z-50"
-    >
-      <div className="flex flex-col items-center justify-center">
+    <div role="status" className="loading-status transition-all duration-500 opacity-0">
+      <div className="loading-wrapper">
         <svg
           aria-hidden="true"
-          className="w-12 h-12 text-gray-200 animate-spin fill-blue-600"
+          className="loading-spinner"
           viewBox="0 0 100 101"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"

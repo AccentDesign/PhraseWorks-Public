@@ -14,14 +14,12 @@ const Pagination = ({ totalPages, page, perPage, setPage }) => {
     setPage(Math.ceil(totalPages / perPage));
   };
   return (
-    <div className="flex flex-rows justify-end items-center px-4 py-8">
+    <div className="pagination-block">
       <p className="mr-4">{totalPages} items</p>
-      <div className="flex items-center space-x-2">
+      <div className="pagination-buttons">
         <button
-          className={`px-3 py-2 font-medium rounded shadow ${
-            page == 1
-              ? 'bg-gray-50 text-gray-200 cursor-not-allowed'
-              : 'text-gray-800 bg-gray-200 hover:bg-gray-300'
+          className={`pagination-btn ${
+            page == 1 ? 'pagination-btn-disabled' : 'pagination-btn-enabled'
           }`}
           onClick={() => {
             if (page >= 2) {
@@ -32,10 +30,8 @@ const Pagination = ({ totalPages, page, perPage, setPage }) => {
           &laquo;
         </button>
         <button
-          className={`px-3 py-2 font-medium rounded shadow ${
-            page == 1
-              ? 'bg-gray-50 text-gray-200 cursor-not-allowed'
-              : 'text-gray-800 bg-gray-200 hover:bg-gray-300'
+          className={`pagination-btn ${
+            page == 1 ? 'pagination-btn-disabled' : 'pagination-btn-enabled'
           }`}
           onClick={() => {
             if (page >= 2) {
@@ -49,10 +45,10 @@ const Pagination = ({ totalPages, page, perPage, setPage }) => {
           {page} of {Math.ceil(totalPages / perPage)}
         </p>
         <button
-          className={`px-3 py-2 font-medium rounded shadow ${
+          className={`pagination-btn ${
             page == Math.ceil(totalPages / perPage)
-              ? 'bg-gray-50 text-gray-200 cursor-not-allowed'
-              : 'text-gray-800 bg-gray-200 hover:bg-gray-300'
+              ? 'pagination-btn-disabled'
+              : 'pagination-btn-enabled'
           }`}
           onClick={() => {
             if (page !== Math.ceil(totalPages / perPage)) {
@@ -63,10 +59,10 @@ const Pagination = ({ totalPages, page, perPage, setPage }) => {
           &rsaquo;
         </button>
         <button
-          className={`px-3 py-2 font-medium rounded shadow ${
+          className={`pagination-btn ${
             page == Math.ceil(totalPages / perPage)
-              ? 'bg-gray-50 text-gray-200 cursor-not-allowed'
-              : 'text-gray-800 bg-gray-200 hover:bg-gray-300'
+              ? 'pagination-btn-disabled'
+              : 'pagination-btn-enabled'
           }`}
           onClick={() => {
             if (page !== Math.ceil(totalPages / perPage)) {
