@@ -14,7 +14,7 @@ let currentThemeId = null;
 
 export async function loadThemeCSS(theme) {
   const match = Object.keys(styles).find((path) => path.includes(`/Content/${theme}/styles.css`));
-  if (!match) return console.warn('No CSS found for theme:', theme);
+  if (!match) return;
 
   if (currentThemeId) {
     const oldStyle = document.querySelector(`style[data-vite-dev-id="${currentThemeId}"]`);

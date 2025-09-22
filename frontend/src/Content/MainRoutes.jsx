@@ -10,6 +10,7 @@ import { handleComponentError } from '../Utils/ErrorHandler';
 
 const THEME_CACHE_KEY = 'app:theme';
 
+
 const MainRoutes = () => {
   const [components, setComponents] = useState(null);
   const [theme, setTheme] = useState(localStorage.getItem(THEME_CACHE_KEY) || null);
@@ -107,17 +108,15 @@ const MainRoutes = () => {
         >
           <Notification />
           <Routes location={location} key={location.pathname}>
-            {HomePage && <Route exact path="/" element={<HomePage />} />}
-            {PostPage && (
-              <Route
-                path="/:post_name"
-                element={<PostPage theme={theme} components={components} />}
-              />
-            )}
-            {AuthorPage && <Route path="/author/:id" element={<AuthorPage />} />}
-            {CategoryPage && <Route path="/category/:categoryName" element={<CategoryPage />} />}
-            {SignUpPage && <Route path="/sign-up" element={<SignUpPage />} />}
-            {LoginPage && <Route path="/login" element={<LoginPage />} />}
+            <Route exact path="/" element={HomePage ? <HomePage /> : <Loading />} />
+            <Route path="/author/:id" element={AuthorPage ? <AuthorPage /> : <Loading />} />
+            <Route path="/category/:categoryName" element={CategoryPage ? <CategoryPage /> : <Loading />} />
+            <Route path="/sign-up" element={SignUpPage ? <SignUpPage /> : <Loading />} />
+            <Route path="/login" element={LoginPage ? <LoginPage /> : <Loading />} />
+            <Route
+              path="/:post_name"
+              element={PostPage && components ? <PostPage theme={theme} components={components} /> : <Loading />}
+            />
           </Routes>
         </div>
       </Suspense>

@@ -119,6 +119,7 @@ const PostsPageContent = () => {
     try {
       if (filter == 'all') {
         const data = await APIGetPosts(loginPassword, page, perPage, 'post');
+
         if (data.status == 200 && data.data?.getPosts) {
           setPosts(data.data.getPosts.posts || []);
           setTotalPosts(data.data.getPosts.total || 0);
@@ -149,7 +150,7 @@ const PostsPageContent = () => {
       }
     } catch (error) {
       await handleComponentError(error, 'PostsPageContent', 'fetchData', {
-        additionalData: { filter, page, perPage, userId: user?.id }
+        additionalData: { filter, page, perPage, userId: user?.id },
       });
     }
   };
@@ -168,7 +169,7 @@ const PostsPageContent = () => {
       }
     }
   }, [reloadPosts]);
-  
+
   return (
     <>
       <div className="w-full">

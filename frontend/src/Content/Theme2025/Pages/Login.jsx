@@ -99,8 +99,11 @@ const Login = () => {
                   calculateForgottenPasswordErrors={calculateForgottenPasswordErrors}
                 />
               ) : (
-                <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50" role="alert">
-                  <span class="font-medium">Success!</span> Please check your email for the next
+                <div
+                  className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50"
+                  role="alert"
+                >
+                  <span className="font-medium">Success!</span> Please check your email for the next
                   step in changing your password.
                 </div>
               )}

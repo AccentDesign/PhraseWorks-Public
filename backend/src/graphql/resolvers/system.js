@@ -588,9 +588,8 @@ export default {
 
       exec('npm run generate:plugins', (error, stdout, stderr) => {
         if (error) {
-          console.log(error);
+          // Error logged by exec callback
         }
-        console.log(stdout);
       });
 
       return { success: true };

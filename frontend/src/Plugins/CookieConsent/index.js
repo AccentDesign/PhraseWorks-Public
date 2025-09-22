@@ -1,0 +1,3 @@
+/*
+Cookie Consent Plugin - Frontend
+*/

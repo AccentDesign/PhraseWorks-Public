@@ -1,0 +1,88 @@
+[2025-09-21T17:52:53.290Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:131:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:52:53.292Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:131:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:53:12.072Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:132:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:53:12.074Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:132:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:57:12.531Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:133:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:57:12.535Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:133:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:57:55.079Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:133:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+[2025-09-21T17:57:55.082Z] TypeError: Constructor Uint8Array requires 'new'
+    at Uint8Array (<anonymous>)
+    at Media.getImageDimensions (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/models/media.js:217:21)
+    at file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/server/routes.js:133:42
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/middleware/cors/index.js:74:5)
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:81:5
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)
+    at async file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/src/middleware/securityMiddleware.js:50:7
+    at async dispatch (file:///Users/nick/Sites/PhraseWorks-No-Wrangler/backend/node_modules/hono/dist/compose.js:22:17)

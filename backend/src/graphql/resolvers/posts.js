@@ -763,7 +763,6 @@ export default {
           // Clear all GraphQL query caches (more aggressive approach)
           await delCacheByPattern(`graphql:*`);
           await delCacheByPattern(`post:*`);
-          console.log(`🗑️ Cleared all GraphQL and post caches after updating post ${postId}`);
         } catch (err) {
           console.warn('⚠️ Failed to update Redis cache for post:', err.message);
         }

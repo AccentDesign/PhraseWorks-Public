@@ -1,0 +1,3 @@
+/*
+Accordions Plugin - Frontend
+*/

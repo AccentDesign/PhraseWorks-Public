@@ -239,7 +239,6 @@ export default {
         const cleanPluginUrl = sanitizeInput(pluginUrl);
 
         const fullUrl = `${c.env.PLUGIN_BASE_URL}${cleanPluginUrl}`;
-        console.log(`Installing plugin from: ${fullUrl}`);
 
         // Fetch the ZIP from the static server
         const response = await fetch(fullUrl);

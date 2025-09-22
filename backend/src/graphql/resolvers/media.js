@@ -253,8 +253,6 @@ export default {
             originalUrl: url
           }, { priority: isImage ? 5 : 0 });
 
-          console.log(`📤 Queued ${isImage ? 'image' : 'file'} upload job for: ${safeFilename}`);
-
           // Return immediately - job will process in background
           await clearMediaCache();
           return { success: true, message: 'File upload queued for processing' };

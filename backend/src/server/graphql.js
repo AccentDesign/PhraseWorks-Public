@@ -169,6 +169,7 @@ export const setupGraphQL = (app) => {
           loaders,
           url: c.req.url,
           c,
+          secret: process.env.SECRET_KEY,
         },
       });
 

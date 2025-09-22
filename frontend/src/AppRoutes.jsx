@@ -4,6 +4,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import { UserContext } from './Contexts/UserContext';
 import { HelmetProvider } from 'react-helmet-async';
 import ErrorBoundary from './Components/ErrorBoundary';
+import Loading from './Admin/Components/Loading';
 
 // Lazy load route components for better code splitting
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
@@ -21,7 +22,7 @@ const AppRoutes = () => {
     fetchData();
   }, []);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <Loading />;
 
   return (
     <HelmetProvider>
@@ -36,7 +37,13 @@ const AppRoutes = () => {
             element={
               user ? (
                 <ErrorBoundary context="admin">
-                  <Suspense fallback={<div className="loading-status"><div className="loading-wrapper">Loading Admin...</div></div>}>
+                  <Suspense
+                    fallback={
+                      <div className="loading-status">
+                        <div className="loading-wrapper">Loading Admin...</div>
+                      </div>
+                    }
+                  >
                     <AdminRoutes />
                   </Suspense>
                 </ErrorBoundary>
@@ -49,7 +56,13 @@ const AppRoutes = () => {
             path="/*"
             element={
               <ErrorBoundary context="frontend">
-                <Suspense fallback={<div className="loading-status"><div className="loading-wrapper">Loading...</div></div>}>
+                <Suspense
+                  fallback={
+                    <div className="loading-status">
+                      <div className="loading-wrapper">Loading...</div>
+                    </div>
+                  }
+                >
                   <MainRoutes />
                 </Suspense>
               </ErrorBoundary>

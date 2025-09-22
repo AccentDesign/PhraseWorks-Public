@@ -1,0 +1,3 @@
+/*
+Admin Columns Plugin - Frontend
+*/

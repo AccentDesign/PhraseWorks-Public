@@ -4,6 +4,7 @@ import { coreShortcodes } from './coreShortcodes';
 import { APIGetShortcodes, APILogError } from '../../API/APISystem.js';
 import { initWebSocket } from '../WebSocketClient';
 import ErrorBoundary from '../../Components/ErrorBoundary';
+import Loading from '../../Admin/Components/Loading.jsx';
 
 const SHORTCODES_CACHE_KEY = 'shortcodes:list';
 
@@ -111,7 +112,7 @@ export const ShortcodesProvider = ({ children }) => {
     };
   }, []);
 
-  if (!shortcodes) return <div>Loading shortcodes...</div>;
+  if (!shortcodes) return <Loading />;
 
   return (
     <ErrorBoundary context="plugin">

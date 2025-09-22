@@ -228,8 +228,11 @@ export default class User {
       const mailer = await Email.getMailer(connection, env);
       if (mailer != null) {
         await mailer.sendMail({
-          from: { name: env.DEFAULT_FROM_NAME || 'PhraseWorks', email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
-          to: user[0].user_email,
+          from: {
+            name: env.DEFAULT_FROM_NAME || 'PhraseWorks',
+            email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost',
+          },
+          to: email,
           subject: `${env.SITE_NAME} Password Reset`,
           text: 'This is a plain text message from PhraseWorks, testing the smtp settings.',
           html: `
@@ -310,17 +313,19 @@ export default class User {
   static async passwordReset(userId, connection, env) {
     const user = await User.findById(userId, connection);
     const hashedKey = await User.generateRPKey(userId, connection);
-    const brevoApiKey = env.BREVO_API_KEY;
 
     const mailer = await Email.getMailer(connection, env);
     if (mailer != null) {
       await mailer.sendMail({
-        from: { name: env.DEFAULT_FROM_NAME || 'PhraseWorks', email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+        from: {
+          name: env.DEFAULT_FROM_NAME || 'PhraseWorks',
+          email: env.DEFAULT_FROM_EMAIL || 'noreply@localhost',
+        },
         to: user[0].user_email,
         subject: `${env.SITE_NAME} Password Reset`,
         text: 'This is a plain text message from PhraseWorks, testing the smtp settings.',
         html: `
-        <img src="${env.R2_PUBLIC_URL}pw.svg" alt="${env.SITE_NAME}" />
+        <img src="${env.SITE_URL}/images/pw-full.svg" width="220" height="47" alt="${env.SITE_NAME}" />
         <h2>Password Reset Request</h2>
 
         <p>Someone has requested a password reset for the following account:</p>

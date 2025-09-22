@@ -70,16 +70,6 @@ export default defineConfig(({ mode }) => {
               ) {
                 return 'vendor-tinymce';
               }
-              if (
-                /node_modules[\\/]@heroicons[\\/]react[\\/]/.test(normalizedId) ||
-                /node_modules[\\/]react-icons[\\/]/.test(normalizedId)
-              ) {
-                return 'vendor-icons';
-              }
-
-              if (/node_modules[\\/]react-markdown[\\/]/.test(normalizedId)) {
-                return 'vendor-markdown';
-              }
 
               if (/node_modules[\\/]@headlessui[\\/]react[\\/]/.test(normalizedId)) {
                 return 'vendor-headless-ui';
@@ -97,16 +87,12 @@ export default defineConfig(({ mode }) => {
                 return 'vendor-dnd';
               }
 
-              if (/node_modules[\\/]prismjs[\\/]/.test(normalizedId)) {
-                return 'vendor-prism-core';
+              if (/node_modules[\\/](date-fns|react-helmet-async|react-colorful|react-easy-crop|react-image-crop)[\\/]/.test(normalizedId)) {
+                return 'vendor-utils';
               }
 
-              if (/node_modules[\\/](rehype-prism-plus|rehype-raw)[\\/]/.test(normalizedId)) {
-                return 'vendor-rehype';
-              }
-
-              if (/node_modules[\\/]refractor[\\/]core/.test(normalizedId)) {
-                return 'vendor-refractor-core';
+              if (/node_modules[\\/](marked|lz-string|uuidv4|html-react-parser|dompurify)[\\/]/.test(normalizedId)) {
+                return 'vendor-text-utils';
               }
 
               return 'vendor-other';

@@ -261,12 +261,15 @@ export default {
         const mailer = await Email.getMailer(connection, c.env);
         if (mailer != null) {
           await mailer.sendMail({
-            from: { name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks', email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+            from: {
+              name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks',
+              email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost',
+            },
             to: user.user_email,
             subject: `${c.env.SITE_NAME} User Created`,
             text: `Thank you for submitting your forgottem password request on ${c.env.SITE_NAME}, you can click here to change the password: ${c.env.SITE_URL}/login?action=reset-password&token=${token}&email=${user.user_email}.`,
             html: `
-            <img src="${c.env.R2_PUBLIC_URL}pw.svg" alt="${c.env.SITE_NAME}" />
+            <img src="${c.env.SITE_URL}/images/pw-full.svg" width="220" height="47" alt="${c.env.SITE_NAME}" />
             <h2>Password Reset Request</h2>
 
             <p>Someone has requested a password reset for the following account:</p>
@@ -351,7 +354,10 @@ export default {
           const mailer = await Email.getMailer(connection, c.env);
           if (mailer != null) {
             await mailer.sendMail({
-              from: { name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks', email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+              from: {
+                name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks',
+                email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost',
+              },
               to: input.email,
               subject: `${c.env.SITE_NAME} User Created`,
               text: `Welcome to ${c.env.SITE_NAME}, You have been added as a user and can log in: ${c.env.SITE_URL}/login?action=rp&key=${hashedKey}&login=${userLogin}.`,
@@ -421,12 +427,15 @@ export default {
         const mailer = await Email.getMailer(connection, c.env);
         if (mailer != null) {
           await mailer.sendMail({
-            from: { name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks', email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost' },
+            from: {
+              name: c.env.DEFAULT_FROM_NAME || 'PhraseWorks',
+              email: c.env.DEFAULT_FROM_EMAIL || 'noreply@localhost',
+            },
             to: user.user_email,
             subject: `${c.env.SITE_NAME} Forgotten Password`,
             text: `Thank you for submitting your forgottem password request on ${c.env.SITE_NAME}, you can click here to change the password: ${c.env.SITE_URL}/login?action=reset-password&token=${token}&email=${email}.`,
             html: `
-          <img src="data:image/png;base64,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" alt="Logo" height="50" width="50">
+          <img src="${c.env.SITE_URL}/images/pw-full.svg" width="220" height="47" alt="${c.env.SITE_NAME}" />
           <h2>Password Reset Request</h2>
 
             <p>Someone has requested a password reset for the following account:</p>

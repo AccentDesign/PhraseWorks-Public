@@ -214,7 +214,7 @@ export default class Media {
         throw new Error('Invalid base64 encoding in file data.');
       }
 
-      const uint8 = Uint8Array(buffer);
+      const uint8 = new Uint8Array(buffer);
       const view = new DataView(buffer);
 
       // JPEG: Look for SOF (Start of Frame) marker
