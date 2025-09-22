@@ -1,12 +1,12 @@
 {
   "name": "phraseworks",
-  "version": "1.0.8",
+  "version": "1.0.1",
   "description": "# PhraseWorks",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
     "dev-backend-docker": "docker-compose -f backend/docker-compose.yml up",
-    "install-all": "concurrently \"cd frontend && npm install\" \"cd backend && npm install\""
+    "install-all": "node scripts/install.js && concurrently \"cd frontend && npm install\" \"cd backend && npm install\""
   },
   "keywords": [],
   "author": "",

@@ -3,7 +3,7 @@ import React, { createContext, useState, useMemo, useCallback, useContext } from
 import { notify } from '../Utils/Notification';
 import { APIConnectorContext } from './APIConnectorContext';
 import { APIGetLoginToken, APIGetRefreshFromToken } from '../API/APIAuth';
-import { graphqlUrl } from '../config';
+import { graphqlUrl, siteUuid } from '../config';
 
 export const UserContext = createContext(null);
 
@@ -20,6 +20,7 @@ export function UserContextProvider({ children }) {
   const LoginUser = useCallback(
     async (email, password) => {
       const data = await APIGetLoginToken(email, password, graphqlUrl);
+
       if (data.status != 200) {
         localStorage.removeItem('loggedIn');
         setLoggedIn(false);
@@ -34,15 +35,15 @@ export function UserContextProvider({ children }) {
           setLoggedIn(true);
 
           setLoginPassword(data.data.login.token);
-          localStorage.setItem('loginPassword', data.data.login.token);
-          localStorage.setItem('refreshToken', data.data.login.refreshToken);
+          localStorage.setItem(`loginPassword_${siteUuid}`, data.data.login.token);
+          localStorage.setItem(`refreshToken_${siteUuid}`, data.data.login.refreshToken);
           let expiryDate = new Date();
           expiryDate.setHours(expiryDate.getHours() + 1);
-          localStorage.setItem('loginExpiry', expiryDate.toISOString());
+          localStorage.setItem(`loginExpiry_${siteUuid}`, expiryDate.toISOString());
 
           const refreshExpiryDate = new Date();
           refreshExpiryDate.setDate(refreshExpiryDate.getDate() + 7);
-          localStorage.setItem('refreshExpiry', refreshExpiryDate.toISOString());
+          localStorage.setItem(`refreshExpiry_${siteUuid}`, refreshExpiryDate.toISOString());
           notify('You have logged in succesfully', 'success');
           return true;
         } else {
@@ -73,9 +74,9 @@ export function UserContextProvider({ children }) {
 
     const isAdminRoute = path.startsWith('/admin');
     if (isAdminRoute) {
-      const expiryDateStorage = localStorage.getItem('loginExpiry');
-      const refreshTokenStorage = localStorage.getItem('refreshToken');
-      const refreshExpiryStorage = localStorage.getItem('refreshExpiry');
+      const expiryDateStorage = localStorage.getItem(`loginExpiry_${siteUuid}`);
+      const refreshTokenStorage = localStorage.getItem(`refreshToken_${siteUuid}`);
+      const refreshExpiryStorage = localStorage.getItem(`refreshExpiry_${siteUuid}`);
       const isOnLoginPage = window.location.pathname === '/login';
 
       const now = new Date();
@@ -115,13 +116,13 @@ export function UserContextProvider({ children }) {
           if (data.status === 200) {
             const refreshExpiry = new Date(data.data.refresh.refreshTokenExpiry * 1000);
             setLoginPassword(data.data.refresh.token);
-            localStorage.setItem('loginPassword', data.data.refresh.token);
-            localStorage.setItem('refreshToken', data.data.refresh.refreshToken);
-            localStorage.setItem('refreshExpiry', refreshExpiry.toISOString());
+            localStorage.setItem(`loginPassword_${siteUuid}`, data.data.refresh.token);
+            localStorage.setItem(`refreshToken_${siteUuid}`, data.data.refresh.refreshToken);
+            localStorage.setItem(`refreshExpiry_${siteUuid}`, refreshExpiry.toISOString());
 
             const newAccessExpiry = new Date();
             newAccessExpiry.setHours(newAccessExpiry.getHours() + 1);
-            localStorage.setItem('loginExpiry', newAccessExpiry.toISOString());
+            localStorage.setItem(`loginExpiry_${siteUuid}`, newAccessExpiry.toISOString());
 
             window.location.reload();
           } else {
