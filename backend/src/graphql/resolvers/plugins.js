@@ -12,7 +12,7 @@ import System from '../../models/system.js';
 
 export const APIGetPluginsFromMastersite = async () => {
   const query = `query {getPlugins { title zip description icon version author company } }`;
-  const url = `http://localhost:8080/graphql`;
+  const url = `https://phraseworks.support-524.workers.dev/graphql`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {

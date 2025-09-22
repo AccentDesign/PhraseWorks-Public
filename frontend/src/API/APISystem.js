@@ -701,7 +701,7 @@ export const APIRunCronTaskInstantly = async (loginPassword, id) => {
 
 export const APIGetPluginsFromMastersite = async () => {
   const query = `mutation {getPlugins { title zip description icon version author company } }`;
-  const url = `http://localhost:8080/graphql`;
+  const url = `https://phraseworks.support-524.workers.dev/graphql`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {

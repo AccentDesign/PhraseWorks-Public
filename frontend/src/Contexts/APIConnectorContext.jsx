@@ -5,7 +5,7 @@ export const APIConnectorContext = createContext(null);
 
 export function APIConnectorContextProvider({ children }) {
   const [loginPassword, setLoginPassword] = useState(
-    localStorage.getItem(`loginPassword_${siteUuid}`) ? localStorage.getItem(`loginPassword_${siteUuid}`) : null,
+    localStorage.getItem(`loginPassword_${siteUuid}`) || null,
   );
   const aPIConnectorContext = useMemo(
     () => ({ setLoginPassword, loginPassword }),

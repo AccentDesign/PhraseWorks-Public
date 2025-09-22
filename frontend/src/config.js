@@ -1,3 +1,3 @@
 export const graphqlUrl = 'http://localhost/';
 
-export const siteUuid = '4bc71763-8ba5-444f-add0-e1f23692075a';
+export const siteUuid = 'c1ef91f0-2fbd-4edb-9e76-4f68ac84b2ad';
